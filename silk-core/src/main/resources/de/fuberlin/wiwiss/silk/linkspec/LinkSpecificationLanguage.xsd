@@ -45,8 +45,11 @@
       <xs:attribute name="metric" type="xs:string" use="required" />
       <xs:attribute name="weight" type="xs:unsignedShort" />
       <xs:attribute name="required" type="xs:boolean" />
+      <xs:attribute name="threshold" type="xs:double" />
     </xs:complexType>
   </xs:element>
+
+
 
   <xs:element name="Aggregate">
     <xs:complexType>
@@ -59,6 +62,91 @@
       <xs:attribute name="type" type="xs:string" use="required" />
       <xs:attribute name="weight" type="xs:unsignedShort" />
       <xs:attribute name="required" type="xs:boolean" />
+      <xs:attribute name="threshold" type="xs:double" />
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+  element that uses all comparison/aggregation values plus results from "Feature"
+   elements to create a feature vector for machine learning. A "FeatureVectorHandler"
+   is used to collect feature vectors, eg for CSV output. A "ClassifierAggregator" produces the
+   "Aggreation" result based on the feature vector. Feature vectors are passed to
+   the "FeatureVectorHandler", then to the "ClassifierAggregator"
+   -->
+  <xs:element name="Classify">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="OperatorFeature" />
+          <xs:element ref="ExtractorFeature" />
+          <xs:element ref="FeatureVectorHandler" />
+          <xs:element ref="Classifier" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="weight" type="xs:unsignedShort" />
+      <xs:attribute name="required" type="xs:boolean" />
+      <xs:attribute name="threshold" type="xs:double" />
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    Used within "Classify". Produces a string feature
+    based on 2 inputs (much like Compare)
+  -->
+  <xs:element name="OperatorFeature">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="1" maxOccurs="1">
+          <xs:element ref="Aggregate" />
+          <xs:element ref="Compare" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="required" type="xs:boolean" />
+      <xs:attribute name="featureName" type="xs:string" />
+      <xs:attribute name="dataType" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ExtractorFeature">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="AnyInput" minOccurs="2" maxOccurs="2"/>
+        <xs:element ref="Param" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="required" type="xs:boolean" />
+      <xs:attribute name="featureName" type="xs:string" />
+      <xs:attribute name="dataType" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+   Used within "Classify". Does something with a feature vector
+   created for a specific link condition evaluation.
+  -->
+  <xs:element name="FeatureVectorHandler">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="Param" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+   Used within "Classify". Responsible for calculating the result
+   of the Aggregation based on the feature vector created from the "AggregateFeature"'s
+   child elements.
+   -->
+  <xs:element name="Classifier">
+      <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="Param" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:string" use="required" />
     </xs:complexType>
   </xs:element>
 
@@ -108,6 +196,7 @@
         <xs:element name="LinkCondition">
           <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="1">
+              <xs:element ref="Classify" />
               <xs:element ref="Aggregate" />
               <xs:element ref="Compare" />
             </xs:choice>

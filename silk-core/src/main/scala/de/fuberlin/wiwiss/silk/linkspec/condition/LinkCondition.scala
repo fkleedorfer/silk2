@@ -53,15 +53,15 @@ case class LinkCondition(rootOperator : Option[Operator])
 
   private def serializeOperator(operator : Operator) : Elem = operator match
   {
-    case Aggregation(required, weight, operators, Aggregator(aggregator, params)) =>
+    case Aggregation(required, weight, threshold, operators, Aggregator(aggregator, params)) =>
     {
-      <Aggregate required={required.toString} weight={weight.toString} type={aggregator}>
+      <Aggregate required={required.toString} weight={weight.toString} threshold={threshold.toString} type={aggregator}>
         { operators.map(serializeOperator) }
       </Aggregate>
     }
-    case Comparison(required, weight, inputs, Metric(metric, params)) =>
+    case Comparison(required, weight, threshold, inputs, Metric(metric, params)) =>
     {
-      <Compare required={required.toString} weight={weight.toString} metric={metric}>
+      <Compare required={required.toString} weight={weight.toString} threshold={threshold.toString} metric={metric}>
         { serializeInput(inputs.source) }
         { serializeInput(inputs.target) }
         { params.map{case (name, value) => <Param name={name} value={value} />} }

@@ -1,14 +1,17 @@
 package de.fuberlin.wiwiss.silk.impl
 
+import classifier.{WekaClassifierAggregator, FalseClassifierAggregator, RandomClassifierAggregator}
 import datasource._
 import transformer._
 import aggegrator._
 import writer._
 import metric._
+import comparisonvectorhandler._
 import de.fuberlin.wiwiss.silk.datasource.DataSource
 import de.fuberlin.wiwiss.silk.linkspec.input.Transformer
-import de.fuberlin.wiwiss.silk.linkspec.{Metric, Aggregator}
 import de.fuberlin.wiwiss.silk.output.{LinkWriter, Formatter}
+import de.fuberlin.wiwiss.silk.linkspec.condition.ClassifierAggregator
+import de.fuberlin.wiwiss.silk.linkspec.{FeatureVectorHandler, Metric, Aggregator}
 
 /**
  * Registers all default implementations.
@@ -50,6 +53,12 @@ object DefaultImplementations
         Aggregator.register(classOf[MinimumAggregator])
         Aggregator.register(classOf[QuadraticMeanAggregator])
         Aggregator.register(classOf[GeometricMeanAggregator])
+        
+        FeatureVectorHandler.register(classOf[CsvFeatureVectorHandler])
+        ClassifierAggregator.register(classOf[RandomClassifierAggregator])
+        ClassifierAggregator.register(classOf[FalseClassifierAggregator])
+        ClassifierAggregator.register(classOf[WekaClassifierAggregator])
+
 
         LinkWriter.register(classOf[FileWriter])
         LinkWriter.register(classOf[MemoryWriter])

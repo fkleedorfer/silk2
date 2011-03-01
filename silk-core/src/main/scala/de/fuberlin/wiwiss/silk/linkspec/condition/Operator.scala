@@ -9,6 +9,8 @@ trait Operator
 
   val weight : Int
 
+  val threshold: Double
+
   def apply(instances : SourceTargetPair[Instance], threshold : Double) : Option[Double]
 
   def index(instance : Instance, threshold : Double) : Set[Seq[Int]]

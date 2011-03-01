@@ -2,29 +2,47 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  
-  <modelVersion>4.0.0</modelVersion>
-  
-  <parent>
-    <groupId>de.fuberlin.wiwiss.silk</groupId>
-    <artifactId>silk</artifactId>
-    <version>2.4-SNAPSHOT</version>
-  </parent>
 
-  <artifactId>silk-core</artifactId>
-  <packaging>jar</packaging>
-  <name>Silk Core</name>
+    <modelVersion>4.0.0</modelVersion>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+    <parent>
+        <groupId>de.fuberlin.wiwiss.silk</groupId>
+        <artifactId>silk</artifactId>
+        <version>2.4-SNAPSHOT</version>
+    </parent>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.thoughtworks.paranamer</groupId>
-      <artifactId>paranamer</artifactId>
-      <version>2.3</version>
-    </dependency>
-  </dependencies>
+    <artifactId>silk-core</artifactId>
+    <packaging>jar</packaging>
+    <name>Silk Core</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.thoughtworks.paranamer</groupId>
+            <artifactId>paranamer</artifactId>
+            <version>2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>weka</groupId>
+            <artifactId>weka</artifactId>
+            <version>3.7</version>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>remote</id>
+            <name>SAT Maven Repository</name>
+            <url>http://satsrv03.researchstudio.at:8081/artifactory/repo/</url>
+            <snapshots>
+            </snapshots>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+        </repository>
+    </repositories>
 
 </project>

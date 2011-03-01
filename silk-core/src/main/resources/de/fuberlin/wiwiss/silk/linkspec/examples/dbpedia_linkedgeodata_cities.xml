@@ -76,7 +76,12 @@
             <Param name="unit" value="km"/>
             <Param name="threshold" value="50"/>
           </Compare>
-       </Aggregate>              
+       <ComparisonVectorHandler type="csv" >
+         <Param name="file" value="vectors.csv" />
+       </ComparisonVectorHandler>          
+       </Aggregate>     
+
+                                 
       </LinkCondition>
 
       <Filter threshold="0.9" limit="1" />

@@ -1,6 +1,7 @@
 package de.fuberlin.wiwiss.silk.instance
 
 import de.fuberlin.wiwiss.silk.linkspec._
+import condition.{Feature, ExtractorFeature, OperatorFeature, ClassifierAggregation}
 import input.{TransformInput, PathInput, Input}
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import xml.Node
@@ -70,7 +71,7 @@ object InstanceSpecification
 
     val targetPaths = linkSpec.condition.rootOperator match
     {
-      case Some(operator) => collectPaths(targetVar)(operator)
+      case Some(operator:Operator) => collectPaths(targetVar)(operator)
       case None => Set[Path]()
     }
 
@@ -80,8 +81,11 @@ object InstanceSpecification
     SourceTargetPair(sourceInstanceSpec, targetInstanceSpec)
   }
 
+
   private def collectPaths(variable : String)(operator : Operator) : Set[Path] = operator match
   {
+    case classifierAggregation : ClassifierAggregation => classifierAggregation.features.flatMap(collectPathsFromFeature(variable)).toSet
+
     case aggregation : Aggregation => aggregation.operators.flatMap(collectPaths(variable)).toSet
     case comparison : Comparison =>
     {
@@ -97,4 +101,16 @@ object InstanceSpecification
     case p : TransformInput => p.inputs.flatMap(collectPathsFromInput(variable)).toSet
     case _ => Set()
   }
+
+  /** added for classification **/
+  private def collectPathsFromFeature(variable : String)(feature : Feature) : Set[Path] = feature match
+  {
+    case opfeature : OperatorFeature => (collectPaths(variable)(opfeature.operator)).toSet
+    case exfeature : ExtractorFeature => {
+      val sourcePaths = collectPathsFromInput(variable)(exfeature.inputs.source)
+      val targetPaths = collectPathsFromInput(variable)(exfeature.inputs.target)
+      (sourcePaths ++ targetPaths).toSet
+    }
+  }
+
 }

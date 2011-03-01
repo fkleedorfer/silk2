@@ -3,7 +3,7 @@ package de.fuberlin.wiwiss.silk.linkspec
 import de.fuberlin.wiwiss.silk.instance.Instance
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 
-case class Aggregation(required : Boolean, weight : Int, operators : Traversable[Operator], aggregator : Aggregator) extends Operator
+case class Aggregation(required : Boolean, weight : Int, threshold: Double, operators : Traversable[Operator], aggregator : Aggregator) extends Operator
 {
   override def apply(instances : SourceTargetPair[Instance], threshold : Double) : Option[Double] =
   {
@@ -15,8 +15,12 @@ case class Aggregation(required : Boolean, weight : Int, operators : Traversable
       {
         val value = operator(instances, aggregator.computeThreshold(threshold, operator.weight.toDouble / totalWeights))
         if(operator.required && value.isEmpty) return None
-
-        (operator.weight, value.getOrElse(0.0))
+        val actualValue = value.getOrElse(0.0)
+        if (actualValue >= this.threshold){
+          (operator.weight, actualValue)
+        } else {
+          return None
+        }
       }
     }
 
