@@ -8,10 +8,6 @@ class StripPostfixTransformer(postfix : String) extends Transformer
 {
   override def evaluate(strings : Seq[String]) : String =
   {
-    val word = strings.toList.head
-    if (word.endsWith(postfix))
-      return word.substring(0, postfix.size)
-    else
-      return word
+    strings.head.stripSuffix(postfix)
   }
 }

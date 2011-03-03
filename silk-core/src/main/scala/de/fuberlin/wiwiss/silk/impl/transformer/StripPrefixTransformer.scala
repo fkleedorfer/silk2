@@ -8,10 +8,6 @@ class StripPrefixTransformer(prefix : String) extends Transformer
 {
   override def evaluate(strings : Seq[String]) : String =
   {
-    val word = strings.toList.head
-    if (word.startsWith(prefix))
-      return word.substring(prefix.size, word.size)
-    else
-      return word
+    strings.head.stripPrefix(prefix)
   }
 }
