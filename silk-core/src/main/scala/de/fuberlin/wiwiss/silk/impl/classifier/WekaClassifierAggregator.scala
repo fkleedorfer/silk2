@@ -76,9 +76,30 @@ class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: 
       //logger.info("weka classifier: creating instance")
       val instance = createInstanceFromFeatureVector(featureVector)
       //logger.info("weka classifier: classifying instance")
-      val classifierResult = this.wekaClassifier.classifyInstance(instance)
-      logger.info("weka classifier: classification result = " + classifierResult)
-      Some(classifierResult)
+      val classifierResult = this.wekaClassifier.distributionForInstance(instance)
+      if (classifierResult.length > 2){
+        logger.severe("cannot handle classification result for more than 2 classes, omitting")
+        None
+      } else {
+        if (classifierResult.length == 0){
+            logger.severe("cannot handle zero-sized classification result omitting")
+            None
+        } else {
+          if (classifierResult.length == 1){
+            logger.info("weka classifier: classification result = " + classifierResult(0))
+            Some(classifierResult(0))
+          } else {
+            //length is 2
+            if (classifierResult(0) > classifierResult(1)){
+              logger.info("weka classifier: classification result = " + (1 - classifierResult(0)))
+              Some(1-classifierResult(0))
+            } else {
+              logger.info("weka classifier: classification result = " + classifierResult(1))
+              Some(classifierResult(1))
+            }
+          }
+        }
+      }
     }
   }
 
