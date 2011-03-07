@@ -4,7 +4,6 @@ import de.fuberlin.wiwiss.silk.instance.Instance
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import de.fuberlin.wiwiss.silk.impl.metric.EqualityMetric
 import de.fuberlin.wiwiss.silk.linkspec.input.Input
-import de.fuberlin.wiwiss.silk.linkspec.Operator
 import java.util.logging.Logger
 
 /**

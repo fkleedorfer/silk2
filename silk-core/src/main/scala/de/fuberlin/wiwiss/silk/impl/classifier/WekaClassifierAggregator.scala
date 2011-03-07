@@ -1,6 +1,6 @@
 package de.fuberlin.wiwiss.silk.impl.classifier
 
-import de.fuberlin.wiwiss.silk.linkspec.MultiIndexAggregator
+import de.fuberlin.wiwiss.silk.linkspec.condition.MultiIndexAggregator
 import de.fuberlin.wiwiss.silk.util.strategy.StrategyAnnotation
 import de.fuberlin.wiwiss.silk.linkspec.condition.{FeatureInstance, MultiIndexClassifierAggregator}
 import weka.classifiers.Classifier

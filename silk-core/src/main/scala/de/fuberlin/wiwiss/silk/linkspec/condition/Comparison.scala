@@ -8,7 +8,11 @@ import de.fuberlin.wiwiss.silk.linkspec.input.Input
 /**
  * A comparison computes the similarity of two inputs.
  */
+
+
+case class Comparison(required : Boolean, weight : Int, threshold: Double, inputs : SourceTargetPair[Input], metric : Metric) extends Operator
 {
+  private val logger = Logger.getLogger(classOf[Comparison].getName)
   /**
    * Computes the similarity between two instances.
    *
@@ -17,7 +21,7 @@ import de.fuberlin.wiwiss.silk.linkspec.input.Input
    *
    * @return The similarity as a value between 0.0 and 1.0. Returns 0.0 if the similarity is lower than the threshold.
    */
-  private val logger = Logger.getLogger(classOf[Comparison].getName)
+
   override def apply(instances : SourceTargetPair[Instance], threshold : Double) : Option[Double] =
   {
     val set1 = inputs.source(instances)
