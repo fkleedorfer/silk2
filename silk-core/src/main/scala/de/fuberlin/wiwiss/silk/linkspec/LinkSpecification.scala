@@ -9,6 +9,8 @@ import de.fuberlin.wiwiss.silk.util.{Identifier, ValidatingXMLReader, SourceTarg
 import java.util.logging.Logger
 
 /**
+ * Represents a Silk Link Specification.
+ *
  * @param id The id which identifies this link specification. May only contain alphanumeric characters (a - z, 0 - 9).
  */
 case class LinkSpecification(id : Identifier,
@@ -18,25 +20,17 @@ case class LinkSpecification(id : Identifier,
                              filter : LinkFilter,
                              outputs : Traversable[Output])
 {
-
-
+  /**
+   * Serializes this Link Specification as XML.
+   */
   def toXML : Node =
   {
     <Interlink id={id}>
       <LinkType>{"<" + linkType + ">"}</LinkType>
-
-      <SourceDataset dataSource={datasets.source.sourceId} var={datasets.source.variable}>
-        <RestrictTo>{datasets.source.restriction}</RestrictTo>
-      </SourceDataset>
-
-      <TargetDataset dataSource={datasets.target.sourceId} var={datasets.target.variable}>
-        <RestrictTo>{datasets.target.restriction}</RestrictTo>
-      </TargetDataset>
-
+      { datasets.source.toXML(true) }
+      { datasets.target.toXML(false) }
       { condition.toXML }
-
       { filter.toXML }
-
       <Outputs>
         { outputs.map(_.toXML) }
       </Outputs>
@@ -54,6 +48,9 @@ object LinkSpecification
     new ValidatingXMLReader(node => fromXML(node, prefixes), schemaLocation)
   }
 
+  /**
+   * Reads a Link Specification from XML.
+   */
   def fromXML(node : Node, prefixes : Map[String, String]) : LinkSpecification =
   {
     new LinkSpecification(

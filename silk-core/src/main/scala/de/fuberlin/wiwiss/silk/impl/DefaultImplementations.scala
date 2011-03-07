@@ -9,6 +9,7 @@ import metric._
 import comparisonvectorhandler._
 import de.fuberlin.wiwiss.silk.datasource.DataSource
 import de.fuberlin.wiwiss.silk.linkspec.input.Transformer
+import de.fuberlin.wiwiss.silk.linkspec.condition.{Aggregator, Metric}
 import de.fuberlin.wiwiss.silk.output.{LinkWriter, Formatter}
 import de.fuberlin.wiwiss.silk.linkspec.condition.ClassifierAggregator
 import de.fuberlin.wiwiss.silk.linkspec.{FeatureVectorHandler, Metric, Aggregator}

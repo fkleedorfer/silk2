@@ -2,6 +2,7 @@ package de.fuberlin.wiwiss.silk.instance
 
 import de.fuberlin.wiwiss.silk.linkspec._
 import condition.{Feature, ExtractorFeature, OperatorFeature, ClassifierAggregation}
+import condition.{Operator, Comparison, Aggregation}
 import input.{TransformInput, PathInput, Input}
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import xml.Node
