@@ -32,6 +32,8 @@ import net.liftweb.http.SHtml
  * def openLinkingTask(projectName, taskName)
  * def removeLinkingTask(projectName, taskName)
  *
+ * def closeTask()
+ *
  * Whenever the workspace changes, the following function will be called:
  *
  * def updateWorkspace(
@@ -63,7 +65,8 @@ object Workspace
     createLinkingTaskFunction &
     editLinkingTaskFunction &
     openLinkingTaskFunction &
-    injectFunction("removeLinkingTask", removeLinkingTask _)
+    injectFunction("removeLinkingTask", removeLinkingTask _) &
+    closeTaskFunction
   }
 
   /**
@@ -249,6 +252,20 @@ object Workspace
     User().workspace.project(projectName).linkingModule.remove(taskName)
   }
 
+  /**
+   * JS Command which defines the closeTask function
+   */
+  private def closeTaskFunction() : JsCmd =
+  {
+    def closeTask() =
+    {
+      User().closeTask()
+      JavaScriptUtils.Empty
+    }
+
+    JsCmds.Function("closeTask", Nil, SHtml.ajaxInvoke(closeTask)._2.cmd)
+  }
+
   /*
    * Injects a Javascript function.
    */
@@ -307,7 +324,8 @@ object Workspace
         ("source" -> task.linkSpec.datasets.source.sourceId.toString) ~
         ("target" -> task.linkSpec.datasets.target.sourceId.toString) ~
         ("sourceDataset" -> task.linkSpec.datasets.source.restriction) ~
-        ("targetDataset" -> task.linkSpec.datasets.target.restriction)
+        ("targetDataset" -> task.linkSpec.datasets.target.restriction) ~
+        ("linkType" -> task.linkSpec.linkType)
       }
 
       val proj : JObject =

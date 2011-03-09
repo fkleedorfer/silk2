@@ -26,8 +26,7 @@
       <div class="container">
 
         <div class="draggables" id="paths">
-          <span style="font-weight: bold; color: #582271;">Property Paths</span>
-          <br/>
+          <span style="font-weight: bold; color: #582271; float: left;">Property Paths</span> <span class="ui-icon ui-icon-refresh" style="margin-bottom:5px;" onclick="reloadCache()" title="refresh property paths"></span>
           <div id="loading" style="width:200px;">loading ...</div>
           <script type="text/javascript">
             getPropertyPaths();
@@ -36,11 +35,12 @@
 
         <div class="droppable_outer">
           <div class="droppable" id="droppable">
-            <p id="droppable_p"></p>
+          <p id="droppable_p"></p>
           </div>
-          <div style="width: 50%; float: left;">Link Type: <input type="text" id="linktype" size="45"/></div>
           <div style="width: 15%; float: left;">Threshold: <input type="text" id="threshold" size="4"/></div>
           <div style="width: 15%; float: left;">Link Limit: <input type="text" id="linklimit" size="4"/></div>
+          <div style="width: 0%; float: left; visibility:hidden;"><input type="text" id="linktype" size="145"/></div>
+
         </div>
 
         <div class="draggables" id="operators">

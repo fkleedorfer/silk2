@@ -46,7 +46,7 @@ class Boot
     val ifLinkingTaskClosed = If(() => !User().linkingTaskOpen, () => RedirectResponse("/linkSpec"))
 
     val workspaceText = LinkText[Unit](_ => Text(if(User().projectOpen) "Workspace: " + User().project.name else "Workspace"))
-    val linkSpecText = LinkText[Unit](_ => Text("Link Specification: " + User().linkingTask.name))
+    val linkSpecText = LinkText[Unit](_ => Text(User().project.name + ": " + User().linkingTask.name))
 
     val entries =
         Menu(Loc("Workspace", List("index"), workspaceText, ifLinkingTaskClosed)) ::
@@ -99,8 +99,6 @@ class Boot
                                                JField("availablePaths", JInt(targetPaths.size)) ::
                                                JField("restrictions", JString(restrictions.target)) :: Nil))
 
-    val isLoadingField = JField("isLoading", JBool(instanceSpecs == null))
-
     var errorMsg : Option[String] = None
     if(linkingTask.cacheLoading != null && linkingTask.cacheLoading.isSet)
     {
@@ -113,6 +111,8 @@ class Boot
         case ex : Exception => errorMsg = Some(ex.getMessage)
       }
     }
+
+    val isLoadingField = JField("isLoading", JBool(errorMsg.isEmpty && instanceSpecs == null))
 
     val json = errorMsg match
     {
