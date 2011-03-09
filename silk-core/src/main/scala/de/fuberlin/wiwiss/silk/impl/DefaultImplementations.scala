@@ -9,10 +9,9 @@ import metric._
 import comparisonvectorhandler._
 import de.fuberlin.wiwiss.silk.datasource.DataSource
 import de.fuberlin.wiwiss.silk.linkspec.input.Transformer
-import de.fuberlin.wiwiss.silk.linkspec.condition.{Aggregator, Metric}
 import de.fuberlin.wiwiss.silk.output.{LinkWriter, Formatter}
-import de.fuberlin.wiwiss.silk.linkspec.condition.ClassifierAggregator
-import de.fuberlin.wiwiss.silk.linkspec.FeatureVectorHandler
+import de.fuberlin.wiwiss.silk.linkspec.condition._
+import de.fuberlin.wiwiss.silk.linkspec.{FeatureVectorHandler}
 
 /**
  * Registers all default implementations.
@@ -60,6 +59,8 @@ object DefaultImplementations
         ClassifierAggregator.register(classOf[FalseClassifierAggregator])
         ClassifierAggregator.register(classOf[WekaClassifierAggregator])
 
+        Extractor.register(classOf[SingleValueExtractor])
+        Extractor.register(classOf[IdenticalValuesExtractor])
 
         LinkWriter.register(classOf[FileWriter])
         LinkWriter.register(classOf[MemoryWriter])

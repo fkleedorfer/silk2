@@ -116,6 +116,7 @@
       <xs:attribute name="required" type="xs:boolean" />
       <xs:attribute name="featureName" type="xs:string" />
       <xs:attribute name="dataType" type="xs:string" />
+      <xs:attribute name="extractor" type="xs:string" />
     </xs:complexType>
   </xs:element>
 

@@ -186,12 +186,15 @@ object LinkSpecification
     val datatypeStr:String = node \ "@dataType" text
     val inputs = readInputs(
       node.child, prefixes)
+    val extractor = Extractor(node \ "@extractor" text, readParams(node))
     logger.info("extractor feature created, featureName=" + nameStr)
     new ExtractorFeature(
       nameStr,
       if (datatypeStr.isEmpty) "numeric" else datatypeStr,
       if (requiredStr.isEmpty) false else requiredStr.toBoolean,
-      readParams(node), SourceTargetPair(inputs(0),inputs(1)))
+      readParams(node), SourceTargetPair(inputs(0),inputs(1)),
+      extractor
+    )
   }
   
   private def readComparison(node : Node, prefixes : Map[String, String]) : Comparison =

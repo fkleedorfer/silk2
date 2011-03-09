@@ -5,6 +5,7 @@ import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import de.fuberlin.wiwiss.silk.impl.metric.EqualityMetric
 import de.fuberlin.wiwiss.silk.linkspec.input.Input
 import java.util.logging.Logger
+import de.fuberlin.wiwiss.silk.util.strategy.{Strategy, Factory, StrategyAnnotation}
 
 /**
  * <DESCRIPTION>
@@ -41,16 +42,59 @@ trait Feature
   val blockCounts : Seq[Int]
 }
 
+trait Extractor extends Strategy
+{
+  def apply(instances : SourceTargetPair[Instance], inputs: SourceTargetPair[Input], threshold: Double) : Option[String]
+
+  def index(value : String, threshold : Double = 0.0) : Set[Seq[Int]] = Set(Seq(0))
+
+  val blockCounts : Seq[Int] = Seq(1)
+}
+
+
+
+object Extractor extends Factory[Extractor]
+
+
+
 /**
- * Extracts a feature iff both inputs contain at least one identity. The value of the feature is the
- * value contained in both sources. If there are more such values, one is chosen at random.
+ * Extracts the first value from either the first or second input (as configured with useFirstInput=[true|false]
  */
-case class ExtractorFeature(featureName: String, dataType: String, required: Boolean, params: Map[String, String], inputs : SourceTargetPair[Input]) extends Feature
+@StrategyAnnotation(id = "single", label = "Single Value Extractor", description = "Extracts the first value of one of the inputs")
+class SingleValueExtractor(useFirstInput: Boolean) extends Extractor
+{
+  private val logger = Logger.getLogger(classOf[ExtractorFeature].getName)
+
+  def apply(instances : SourceTargetPair[Instance], inputs: SourceTargetPair[Input], threshold: Double) : Option[String] =
+  {
+    val set1 = inputs.source(instances)
+    val set2 = inputs.target(instances)
+
+    if (useFirstInput){
+      if (set1.isEmpty) {
+          None
+      } else {
+        Some(set1.head)
+      }
+    } else {
+       if (set2.isEmpty) {
+          None
+      } else {
+        Some(set2.head)
+      }
+    }
+  }
+}
+
+/**
+ * Extracts the first value from either the first or second input (as configured with useFirstInput=[true|false]
+ */
+@StrategyAnnotation(id = "identity", label = "Identical Value Extractor", description = "Searches both inputs for identical values and outputs the first one found")
+class IdenticalValuesExtractor() extends Extractor
 {
   private val logger = Logger.getLogger(classOf[ExtractorFeature].getName)
   private val metric = new EqualityMetric()
-
-  override def apply(instances : SourceTargetPair[Instance], threshold:Double) : Option[FeatureInstance] =
+  def apply(instances : SourceTargetPair[Instance], inputs: SourceTargetPair[Input], threshold: Double) : Option[String] =
   {
     val set1 = inputs.source(instances)
     val set2 = inputs.target(instances)
@@ -70,26 +114,45 @@ case class ExtractorFeature(featureName: String, dataType: String, required: Boo
         case None => false
       }
       if (equalValues.size == 0) {
-        if (required){
-          None
-        } else {
-          Some(FeatureInstance(featureName, dataType, None))
-        }
+        None
       } else {
-        Some(FeatureInstance(featureName, dataType, Some(equalValues.head.get.toString)))
+        Some(equalValues.head.get.toString)
       }
     } else {
       None
     }
   }
+}
 
-  override val blockCounts = metric.blockCounts
+/**
+ * Extracts a feature iff both inputs contain at least one identity. The value of the feature is the
+ * value contained in both sources. If there are more such values, one is chosen at random.
+ */
+case class ExtractorFeature(featureName: String, dataType: String, required: Boolean, params: Map[String, String], inputs : SourceTargetPair[Input], extractor: Extractor) extends Feature
+{
+  private val logger = Logger.getLogger(classOf[ExtractorFeature].getName)
+
+  override def apply(instances : SourceTargetPair[Instance], threshold:Double) : Option[FeatureInstance] =
+  {
+    val result = extractor.apply(instances, inputs, threshold)
+    if (result.isDefined){
+      Some(FeatureInstance(featureName, dataType, result))
+    } else {
+      if (required){
+        None
+      } else {
+        Some(FeatureInstance(featureName, dataType, None))
+      }
+    }
+  }
+
+  override val blockCounts = extractor.blockCounts
 
   override def index(instance : Instance, threshold : Double) : Set[Seq[Int]] =
   {
 
    val values = inputs.source(SourceTargetPair(instance, instance)) ++ inputs.target(SourceTargetPair(instance, instance))
-    values.flatMap(value => metric.index(value, threshold)).toSet
+    values.flatMap(value => extractor.index(value, threshold)).toSet
   }
 
   override def toString =
