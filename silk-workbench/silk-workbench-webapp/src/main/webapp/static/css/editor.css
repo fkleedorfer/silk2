@@ -35,7 +35,6 @@ body{
 	cursor:move;
 	font-size: 9pt;
 	z-index:50;
-
 }
 
 ._jsPlumb_connector { z-index:1; }
@@ -72,12 +71,17 @@ body{
 	left:100px;
 	top:100px;
 	font-size: 9pt;
+    z-index: 10;
 }
 
 .dragDiv h5 {
 	font-size: 9pt;
+    cursor: move;
 }
 
+.dragDiv .content {
+    min-height: 14px;
+}
 .sourcePath {
 	background-color:#f2d7ff;
 	border:1px solid #C354BF;
@@ -136,6 +140,7 @@ body{
 .dragDiv div {
 	padding:3px 5px;
 	margin-bottom:5px;
+
 }
 
 .dragDiv h5 div {
@@ -145,6 +150,7 @@ body{
 
 .more {
 	font-size: 9pt;
+    width: 230px;
 }
 
 a.more {

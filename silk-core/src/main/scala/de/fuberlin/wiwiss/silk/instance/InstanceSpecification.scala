@@ -8,7 +8,7 @@ import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import xml.Node
 import de.fuberlin.wiwiss.silk.config.Prefixes
 
-class InstanceSpecification(val variable : String, val restrictions : String, val paths : Seq[Path], val prefixes : Prefixes)
+class InstanceSpecification(val variable : String, val restrictions : Restrictions, val paths : Seq[Path])
 {
   def pathIndex(path : Path) =
   {
@@ -25,19 +25,13 @@ class InstanceSpecification(val variable : String, val restrictions : String, va
   {
     <InstanceSpecification>
       <Variable>{variable}</Variable>
-      <Restrictions>{restrictions}</Restrictions>
+      { restrictions.toXML }
       <Paths>{
         for(path <- paths) yield
         {
-          <Path>{path.toString}</Path>
+          <Path>{path.serialize(Prefixes.empty)}</Path>
         }
       }</Paths>
-      <Prefixes>{
-        for((key, value) <- prefixes) yield
-        {
-          <Prefix id={key} namespace={value} />
-        }
-      }</Prefixes>
     </InstanceSpecification>
   }
 }
@@ -46,17 +40,14 @@ object InstanceSpecification
 {
   def fromXML(node : Node) =
   {
-    val prefixes = Prefixes((node \ "Prefixes" \ "Prefix").map(n => (n \ "@id" text, n \ "@namespace" text)).toMap)
-
     new InstanceSpecification(
       variable = node \ "Variable" text,
-      restrictions = node \ "Restrictions" text,
-      paths = for(pathNode <- node \ "Paths" \ "Path") yield Path.parse(pathNode text, prefixes),
-      prefixes = prefixes
+      restrictions = Restrictions.fromXML(node \ "Restrictions" head)(Prefixes.empty),
+      paths = for(pathNode <- node \ "Paths" \ "Path") yield Path.parse(pathNode text, Prefixes.empty)
     )
   }
 
-  def retrieve(linkSpec : LinkSpecification, prefixes : Prefixes) : SourceTargetPair[InstanceSpecification] =
+  def retrieve(linkSpec : LinkSpecification) : SourceTargetPair[InstanceSpecification] =
   {
     val sourceVar = linkSpec.datasets.source.variable
     val targetVar = linkSpec.datasets.target.variable
@@ -76,8 +67,8 @@ object InstanceSpecification
       case None => Set[Path]()
     }
 
-    val sourceInstanceSpec = new InstanceSpecification(sourceVar, sourceRestriction, sourcePaths.toSeq, prefixes)
-    val targetInstanceSpec = new InstanceSpecification(targetVar, targetRestriction, targetPaths.toSeq, prefixes)
+    val sourceInstanceSpec = new InstanceSpecification(sourceVar, sourceRestriction, sourcePaths.toSeq)
+    val targetInstanceSpec = new InstanceSpecification(targetVar, targetRestriction, targetPaths.toSeq)
 
     SourceTargetPair(sourceInstanceSpec, targetInstanceSpec)
   }

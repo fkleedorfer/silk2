@@ -20,7 +20,10 @@ var sourceDataSetVar = "";
 var targetDataSetVar = "";
 var sourceDataSetRestriction = "";
 var targetDataSetRestriction = "";
-  
+
+// TODO: not needed?
+// jsPlumb.draggable($(".droppable"));
+
 var endpointOptions =
 {
   endpoint: new jsPlumb.Endpoints.Dot(
@@ -91,7 +94,7 @@ var endpointOptions2 =
     lineWidth: 5
   },
   isTarget: true,
-  maxConnections: 4,
+  maxConnections: 1,
   anchor: "RightMiddle"
 };
 
@@ -111,6 +114,28 @@ function findLongestPath(xml)
   return length;
 }
 
+function getHelpIcon(description, marginTop) {
+  var helpIcon = $(document.createElement('img'));
+  helpIcon.attr("src", "static/img/help.png");
+  if ((marginTop == null) || (marginTop > 0)) {
+    helpIcon.attr("style", "margin-top: 6px; cursor:help;");
+  } else {
+    helpIcon.attr("style", "margin-bottom: 3px; cursor:help;");
+  }
+  helpIcon.attr("align", "right");
+  helpIcon.attr("title", description);
+  return helpIcon;
+}
+
+function getDeleteIcon(elementId) {
+  var img = $(document.createElement('img'));
+  img.attr("src", "static/img/delete.png");
+  img.attr("align", "right");
+  img.attr("style", "cursor:pointer;");
+  img.attr("onclick", "jsPlumb.removeAllEndpoints('" + elementId+"');$('" + elementId+"').remove();");
+  return img;
+}
+
 function parseXML(xml, level, level_y, last_element, max_level)
 {
   $(xml).find("> Aggregate").each(function ()
@@ -125,9 +150,9 @@ function parseXML(xml, level, level_y, last_element, max_level)
     var number = "#aggregate_" + aggregatecounter;
     box1.draggable(
     {
-      containment: '.droppable'
+      containment: '#droppable'
     });
-    box1.appendTo("#droppable_p");
+    box1.appendTo("#droppable");
 
     var box2 = $(document.createElement('small'));
     box2.addClass('name');
@@ -150,11 +175,7 @@ function parseXML(xml, level, level_y, last_element, max_level)
     span.append(mytext);
     box2.append(span);
 	
-    var img = $(document.createElement('img'));
-    img.attr("src", "static/img/delete.png");
-    img.attr("align", "right");
-    img.attr("onclick", "jsPlumb.removeAllEndpoints('#aggregate_" + aggregatecounter+"');$('#aggregate" + aggregatecounter+"').remove();");
-    box2.append(img);
+    box2.append(getDeleteIcon("#aggregate_" + aggregatecounter));
 
     box1.append(box2);
 
@@ -209,6 +230,8 @@ function parseXML(xml, level, level_y, last_element, max_level)
       box2.append(box5);
     });
 
+    box2.append(getHelpIcon(aggregators[$(this).attr("type")]["description"]));
+
     box1.append(box2);
 
     var endp_left = jsPlumb.addEndpoint('aggregate_' + aggregatecounter, endpointOptions1);
@@ -236,9 +259,9 @@ function parseXML(xml, level, level_y, last_element, max_level)
     var number = "#compare_" + comparecounter;
     box1.draggable(
     {
-      containment: '.droppable'
+      containment: '#droppable'
     });
-    box1.appendTo("#droppable_p");
+    box1.appendTo("#droppable");
 
     var box2 = $(document.createElement('small'));
     box2.addClass('name');
@@ -261,11 +284,7 @@ function parseXML(xml, level, level_y, last_element, max_level)
     span.append(mytext);
     box2.append(span);
 
-    var img = $(document.createElement('img'));
-    img.attr("src", "static/img/delete.png");
-    img.attr("align", "right");
-    img.attr("onclick", "jsPlumb.removeAllEndpoints('#compare_" + comparecounter+"');$('#compare_" + comparecounter+"').remove();");
-    box2.append(img);
+    box2.append(getDeleteIcon("#compare_" + comparecounter));
 
     box1.append(box2);
 
@@ -320,6 +339,8 @@ function parseXML(xml, level, level_y, last_element, max_level)
         box2.append(box5);
     });
 
+    box2.append(getHelpIcon(comparators[$(this).attr("metric")]["description"]));
+
     box1.append(box2);
 
     var endp_left = jsPlumb.addEndpoint('compare_' + comparecounter, endpointOptions1);
@@ -349,9 +370,9 @@ function parseXML(xml, level, level_y, last_element, max_level)
     var number = "#transform_" + transformcounter;
     box1.draggable(
     {
-      containment: '.droppable'
+      containment: '#droppable'
     });
-    box1.appendTo("#droppable_p");
+    box1.appendTo("#droppable");
 
     var box2 = $(document.createElement('small'));
     box2.addClass('name');
@@ -374,11 +395,7 @@ function parseXML(xml, level, level_y, last_element, max_level)
     span.append(mytext);
     box2.append(span);
 
-    var img = $(document.createElement('img'));
-    img.attr("src", "static/img/delete.png");
-    img.attr("align", "right");
-    img.attr("onclick", "jsPlumb.removeAllEndpoints('#transform_" + transformcounter+"');$('#transform_" + transformcounter+"').remove();");
-    box2.append(img);
+    box2.append(getDeleteIcon("#transform_" + transformcounter));
 
     box1.append(box2);
 
@@ -410,6 +427,8 @@ function parseXML(xml, level, level_y, last_element, max_level)
         box2.append(box5);
     });
 
+    box2.append(getHelpIcon(transformations[$(this).attr("function")]["description"], transformations[$(this).attr("function")]["parameters"].length));
+
     box1.append(box2);
 
     var endp_left = jsPlumb.addEndpoint('transform_' + transformcounter, endpointOptions1);
@@ -436,40 +455,41 @@ function parseXML(xml, level, level_y, last_element, max_level)
     var left = (max_level*250) - ((level + 1) * 250) + 300;
     box1.attr("style", "left: " + left + "px; top: " + height + "px;");
 
-    //box1.html("<h5 class='handler'>" + json.Input[sourcecounter].path + "</h5><div class='content'></div>");
     var number = "#source_" + sourcecounter;
     box1.draggable(
     {
-      containment: '.droppable'
+      containment: '#droppable'
     });
-    box1.appendTo("#droppable_p");
+    box1.appendTo("#droppable");
 
-	var box2 = $(document.createElement('small'));
-	box2.addClass('name');
-	var mytext = document.createTextNode(encodeHtml($(this).attr("path")));
-	box2.append(mytext);
-	box1.append(box2);
-	var box2 = $(document.createElement('small'));
-	box2.addClass('type');
-	var mytext = document.createTextNode("Input");
-	box2.append(mytext);
-	box1.append(box2);
+    var box2 = $(document.createElement('small'));
+    box2.addClass('name');
+    var mytext = document.createTextNode(encodeHtml($(this).attr("path")));
+    box2.append(mytext);
+    box1.append(box2);
+    var box2 = $(document.createElement('small'));
+    box2.addClass('type');
+    var mytext = document.createTextNode("Input");
+    box2.append(mytext);
+    box1.append(box2);
 	
     var box2 = $(document.createElement('h5'));
     box2.addClass('handler');
 
     var span = $(document.createElement('div'));
     span.attr("style", "width: 170px; white-space:nowrap; overflow:hidden; float: left;");
-    span.attr("title", $(this).attr("path"))
-    var mytext = document.createTextNode($(this).attr("path"));
+    // TODO
+    /*
+    if (($(this).attr("path")).indexOf("\\") > 0) {
+      alert($(this).attr("path"));
+    }
+    */
+    span.attr("title", encodeHtmlInput($(this).attr("path")));
+    var mytext = document.createTextNode(encodeHtmlInput($(this).attr("path")));
     span.append(mytext);
     box2.append(span);
 
-	var img = $(document.createElement('img'));
-	img.attr("src", "static/img/delete.png");
-	img.attr("align", "right");
-	img.attr("onclick", "jsPlumb.removeAllEndpoints('#source_" + sourcecounter+"');$('#source_" + sourcecounter+"').remove();");
-	box2.append(img);
+    box2.append(getDeleteIcon("#source_" + sourcecounter));
 
     box1.append(box2);
 
@@ -500,20 +520,20 @@ function load()
   $(linkSpec).find("> SourceDataset").each(function ()
   {
     sourceDataSet = $(this).attr("dataSource");
-	sourceDataSetVar = $(this).attr("var");
-	$(this).find("> RestrictTo").each(function ()
-	{
-		sourceDataSetRestriction = $(this).text();
-	});
+    sourceDataSetVar = $(this).attr("var");
+    $(this).find("> RestrictTo").each(function ()
+    {
+      sourceDataSetRestriction = $(this).text();
+    });
   });
   $(linkSpec).find("> TargetDataset").each(function ()
   {
     targetDataSet = $(this).attr("dataSource");
-	targetDataSetVar = $(this).attr("var");
-	$(this).find("> RestrictTo").each(function ()
-	{
-		targetDataSetRestriction = $(this).text();
-	});
+    targetDataSetVar = $(this).attr("var");
+    $(this).find("> RestrictTo").each(function ()
+    {
+      targetDataSetRestriction = $(this).text();
+    });
   });
   
   $(linkSpec).find("> LinkCondition").each(function ()
@@ -567,7 +587,11 @@ function createNewElement(elementId)
 	var elType = ($(elementIdName).children(".type").text());
 	var xml = document.createElement(elType);
 	if (elType == "Input") {
-		xml.setAttribute("path", elName);
+    if (elName == "") {
+      xml.setAttribute("path", $(elementIdName+" > h5 > input").val());
+    } else {
+      xml.setAttribute("path", decodeHtml(elName));
+    }
 	} else if (elType == "TransformInput") {
 		xml.setAttribute("function", elName);
     } else if (elType == "Aggregate") {
@@ -575,7 +599,7 @@ function createNewElement(elementId)
 	} else if (elType == "Compare") {
 		xml.setAttribute("metric", elName);
 	}
-    var params = $(elementIdName+" > div.content > input");
+  var params = $(elementIdName+" > div.content > input");
 
 	var c = jsPlumb.getConnections();
 	for (var i = 0; i < c[jsPlumb.getDefaultScope()].length; i++)
@@ -589,20 +613,29 @@ function createNewElement(elementId)
     }
 
     for (var l = 0; l < params.length; l++) {
-        if ($(params[l]).attr("name") == "required") {
-            if (($(elementIdName+" > div.content > input[name=required]:checked").val()) == "on") {
-                xml.setAttribute("required", "true");
-            } else {
-                xml.setAttribute("required", "false");
-            }
-        }  else if ($(params[l]).attr("name") == "weight") {
-           xml.setAttribute("weight", $(params[l]).attr("value"));
-        }  else {
+      if ($(params[l]).attr("name") == "required") {
+        if (($(elementIdName+" > div.content > input[name=required]:checked").val()) == "on") {
+            xml.setAttribute("required", "true");
+        } else {
+            xml.setAttribute("required", "false");
+        }
+      } else if ($(params[l]).attr("name") == "weight") {
+        xml.setAttribute("weight", $(params[l]).attr("value"));
+      } else {
+        if (elType == "Compare") {
+          if ($(params[l]).val() != "") {
             var xml_param = document.createElement("Param");
             xml_param.setAttribute("name", $(params[l]).attr("name"));
             xml_param.setAttribute("value", $(params[l]).val());
             xml.appendChild(xml_param);
+          }
+        } else {
+          var xml_param = document.createElement("Param");
+          xml_param.setAttribute("name", $(params[l]).attr("name"));
+          xml_param.setAttribute("value", $(params[l]).val());
+          xml.appendChild(xml_param);
         }
+      }
     }
 
     return xml;
@@ -612,78 +645,75 @@ function serializeLinkSpec() {
   //alert (JSON.stringify(c));
 
   var c = jsPlumb.getConnections();
-  var connections = "";
-  for (var i = 0; i < c[jsPlumb.getDefaultScope()].length; i++)
-  {
-    var source = c[jsPlumb.getDefaultScope()][i].sourceId;
-    var target = c[jsPlumb.getDefaultScope()][i].targetId;
-    sources[target] = source;
-    targets[source] = target;
-    connections = connections + source + " -> " + target + ", ";
-  }
-  //alert (connections);
-  var root = null;
-  for (var key in sources)
-  {
-    if (!targets[key])
-	{
-      root = key;
+  if (c[jsPlumb.getDefaultScope()] !== undefined) {
+    var connections = "";
+    for (var i = 0; i < c[jsPlumb.getDefaultScope()].length; i++)
+    {
+      var source = c[jsPlumb.getDefaultScope()][i].sourceId;
+      var target = c[jsPlumb.getDefaultScope()][i].targetId;
+      sources[target] = source;
+      targets[source] = target;
+      connections = connections + source + " -> " + target + ", ";
+    }
+    //alert (connections);
+    var root = null;
+    for (var key in sources)
+    {
+      if (!targets[key])
+      {
+        root = key;
+      }
     }
   }
+  // alert(connections + "\n\n" + root);
+  var xml = document.createElement("Interlink");
+  xml.setAttribute("id", interlinkId);
+
+  var linktype = document.createElement("LinkType");
+  var linktypeText = document.createTextNode($("#linktype").val());
+  linktype.appendChild(linktypeText);
+  xml.appendChild(linktype);
+
+  var sourceDataset = document.createElement("SourceDataset");
+  sourceDataset.setAttribute("var", sourceDataSetVar);
+  sourceDataset.setAttribute("dataSource", sourceDataSet);
+  var restriction = document.createElement("RestrictTo");
+  var restrictionText = document.createTextNode(sourceDataSetRestriction);
+  restriction.appendChild(restrictionText);
+  sourceDataset.appendChild(restriction);
+  xml.appendChild(sourceDataset);
+
+  var targetDataset = document.createElement("TargetDataset");
+  targetDataset.setAttribute("var", targetDataSetVar);
+  targetDataset.setAttribute("dataSource", targetDataSet);
+  var restriction = document.createElement("RestrictTo");
+  var restrictionText = document.createTextNode(targetDataSetRestriction);
+  restriction.appendChild(restrictionText);
+  targetDataset.appendChild(restriction);
+  xml.appendChild(targetDataset);
+
+  var linkcondition = document.createElement("LinkCondition");
   if (root != null)
   {
-    // alert(connections + "\n\n" + root);
-    var xml = document.createElement("Interlink");
-	xml.setAttribute("id", interlinkId);
-	
-	var linktype = document.createElement("LinkType");
-	var linktypeText = document.createTextNode($("#linktype").val());
-	linktype.appendChild(linktypeText);
-	xml.appendChild(linktype);
-
-	var sourceDataset = document.createElement("SourceDataset");
-	sourceDataset.setAttribute("var", sourceDataSetVar);
-	sourceDataset.setAttribute("dataSource", sourceDataSet);
-	var restriction = document.createElement("RestrictTo");
-	var restrictionText = document.createTextNode(sourceDataSetRestriction);
-	restriction.appendChild(restrictionText);
-	sourceDataset.appendChild(restriction);
-	xml.appendChild(sourceDataset);
-
-	var targetDataset = document.createElement("TargetDataset");
-	targetDataset.setAttribute("var", targetDataSetVar);
-	targetDataset.setAttribute("dataSource", targetDataSet);
-	var restriction = document.createElement("RestrictTo");
-	var restrictionText = document.createTextNode(targetDataSetRestriction);
-	restriction.appendChild(restrictionText);
-	targetDataset.appendChild(restriction);
-	xml.appendChild(targetDataset);
-
-	var linkcondition = document.createElement("LinkCondition");
-	linkcondition.appendChild(createNewElement(root));
-	xml.appendChild(linkcondition);
-
-	var filter = document.createElement("Filter");
-	if ($("#linklimit").val().length > 0)
-	{
-	  filter.setAttribute("limit", $("#linklimit").val());
-    }
-	filter.setAttribute("threshold", $("#threshold").val());
-	xml.appendChild(filter);
-
-	var outputs = document.createElement("Outputs");
-	xml.appendChild(outputs);
-
-	var xmlString = getHTML(xml, true);
-	xmlString = xmlString.replace('xmlns="http://www.w3.org/1999/xhtml"', "");
-	// alert(xmlString);
-	return xmlString;
+    linkcondition.appendChild(createNewElement(root));
   }
-  else
+  xml.appendChild(linkcondition);
+
+  var filter = document.createElement("Filter");
+  if ($("#linklimit").val().length > 0)
   {
-    alert("No tree root found!");
-    return "Error";
+    filter.setAttribute("limit", $("#linklimit").val());
   }
+  filter.setAttribute("threshold", $("#threshold").val());
+  xml.appendChild(filter);
+
+  var outputs = document.createElement("Outputs");
+  xml.appendChild(outputs);
+
+  var xmlString = getHTML(xml, true);
+  xmlString = xmlString.replace('xmlns="http://www.w3.org/1999/xhtml"', "");
+  // alert(xmlString);
+  return xmlString;
 }
 
 $(function ()
@@ -692,64 +722,78 @@ $(function ()
   {
     drop: function (ev, ui)
     {
-      //draggedNumber = ui.helper.attr('id').search(/([0-9])/);
-      $(this).append($(ui.helper).clone());
-      if (ui.helper.attr('id').search(/aggregate/) != -1)
-      {
-        jsPlumb.addEndpoint('aggregate_' + aggregatecounter, endpointOptions1);
-        jsPlumb.addEndpoint('aggregate_' + aggregatecounter, endpointOptions2);
-        var number = "#aggregate_" + aggregatecounter;
-        $(number).draggable(
+      if ($("#droppable").find("> #"+ui.helper.attr('id')+"").length == 0) {
+        //$(this).append($(ui.helper).clone());
+        $.ui.ddmanager.current.cancelHelperRemoval = true;
+        ui.helper.appendTo(this);
+        if (ui.helper.attr('id').search(/aggregate/) != -1)
         {
-          containment: '.droppable'
-        });
-        aggregatecounter = aggregatecounter + 1;
-      }
-      if (ui.helper.attr('id').search(/transform/) != -1)
-      {
-        jsPlumb.addEndpoint('transform_' + transformcounter, endpointOptions1);
-        jsPlumb.addEndpoint('transform_' + transformcounter, endpointOptions2);
-        var number = "#transform_" + transformcounter;
-        $(number).draggable(
+          jsPlumb.addEndpoint('aggregate_' + aggregatecounter, endpointOptions1);
+          jsPlumb.addEndpoint('aggregate_' + aggregatecounter, endpointOptions2);
+          var number = "#aggregate_" + aggregatecounter;
+          $(number).draggable(
+          {
+            containment: '#droppable'
+          });
+          aggregatecounter = aggregatecounter + 1;
+        }
+        if (ui.helper.attr('id').search(/transform/) != -1)
         {
-          containment: '.droppable'
-        });
-        transformcounter = transformcounter + 1;
-      }
-      if (ui.helper.attr('id').search(/compare/) != -1)
-      {
-        jsPlumb.addEndpoint('compare_' + comparecounter, endpointOptions1);
-        jsPlumb.addEndpoint('compare_' + comparecounter, endpointOptions2);
-        var number = "#compare_" + comparecounter;
-        $(number).draggable(
+          jsPlumb.addEndpoint('transform_' + transformcounter, endpointOptions1);
+          jsPlumb.addEndpoint('transform_' + transformcounter, endpointOptions2);
+          var number = "#transform_" + transformcounter;
+          $(number).draggable(
+          {
+            containment: '#droppable'
+          });
+          transformcounter = transformcounter + 1;
+        }
+        if (ui.helper.attr('id').search(/compare/) != -1)
         {
-          containment: '.droppable'
-        });
-        comparecounter = comparecounter + 1;
-      }
-      if (ui.helper.attr('id').search(/source/) != -1)
-      {
-        jsPlumb.addEndpoint('source_' + sourcecounter, endpointOptions);
-        var number = "#source_" + sourcecounter;
-        $(number).draggable(
+          jsPlumb.addEndpoint('compare_' + comparecounter, endpointOptions1);
+          jsPlumb.addEndpoint('compare_' + comparecounter, endpointOptions2);
+          var number = "#compare_" + comparecounter;
+          $(number).draggable(
+          {
+            containment: '#droppable'
+          });
+          comparecounter = comparecounter + 1;
+        }
+        if (ui.helper.attr('id').search(/source/) != -1)
         {
-          containment: '.droppable'
-        });
-        sourcecounter = sourcecounter + 1;
-      }
-      if (ui.helper.attr('id').search(/target/) != -1)
-      {
-        jsPlumb.addEndpoint('target_' + targetcounter, endpointOptions);
-        var number = "#target_" + targetcounter;
-        $(number).draggable(
+          jsPlumb.addEndpoint('source_' + sourcecounter, endpointOptions);
+          var number = "#source_" + sourcecounter;
+          $(number).draggable(
+          {
+            containment: '#droppable'
+          });
+          sourcecounter = sourcecounter + 1;
+          /*
+          $(number).removeClass("ui-draggable-dragging");
+          $(number).addClass("ui-draggable");
+          */
+        }
+        if (ui.helper.attr('id').search(/target/) != -1)
         {
-          containment: '.droppable'
-        });
-        targetcounter = targetcounter + 1;
+          jsPlumb.addEndpoint('target_' + targetcounter, endpointOptions);
+          var number = "#target_" + targetcounter;
+          $(number).draggable(
+          {
+            containment: '#droppable'
+          });
+          targetcounter = targetcounter + 1;
+        }
       }
     }
   });
 });
+
+function decodeHtml(value)
+{
+  encodedHtml = value.replace("&lt;", "<");
+  encodedHtml = encodedHtml.replace("&gt;", ">");
+  return encodedHtml;
+}
 
 function encodeHtml(value)
 {
@@ -759,21 +803,40 @@ function encodeHtml(value)
   return encodedHtml;
 }
 
-function getPropertyPaths()
+function encodeHtmlInput(value)
 {
+  var encodedHtml = value.replace('\\', "&#92;");
+  return encodedHtml;
+}
 
+function getPropertyPaths(deleteExisting)
+{
+  if (deleteExisting)
+  {
+    $("#paths").empty();
+    var box = $(document.createElement('div'));
+    box.attr("id", "loading");
+    box.attr("style", "width: 230px;");
+    var text = document.createTextNode("loading ...");
+    box.append(text);
+    box.appendTo("#paths");
+  }
   var url = "/api/project/paths"; // ?max=10
   $.getJSON(url, function (data)
   {
-    if(data.isLoading) {
-	  var dot = document.createTextNode(".");
+    if(data.isLoading)
+    {
+	    var dot = document.createTextNode(".");
       document.getElementById("loading").appendChild(dot);
-      setTimeout("getPropertyPaths();", 1000);	  
+      setTimeout("getPropertyPaths();", 1000);
+    }
+    else if (data.error !== undefined)
+    {
+      alert("Could not load property paths.\nError: " + data.error);
     }
     else
     {
-    document.getElementById("paths").removeChild(document.getElementById("loading"));
-
+      document.getElementById("paths").removeChild(document.getElementById("loading"));
 
     var global_id = 0;
 
@@ -805,7 +868,6 @@ function getPropertyPaths()
           var box1 = $(document.createElement('div'));
           box1.addClass('dragDiv sourcePath');
           box1.attr("id", "source_" + sourcecounter);
-          box1.attr("style", "z-index:10;");
 
           var box2 = $(document.createElement('small'));
           box2.addClass('name');
@@ -824,16 +886,12 @@ function getPropertyPaths()
 
           var span = $(document.createElement('div'));
           span.attr("style", "width: 170px; white-space:nowrap; overflow:hidden; float: left;");
-          span.attr("title", encodeHtml(item.path))
-          var mytext = document.createTextNode(encodeHtml(item.path));
+          span.attr("title", item.path);
+          var mytext = document.createTextNode(item.path);
           span.append(mytext);
           box2.append(span);
 
-          var img = $(document.createElement('img'));
-          img.attr("src", "static/img/delete.png");
-          img.attr("align", "right");
-          img.attr("onclick", "jsPlumb.removeAllEndpoints('#source_" + sourcecounter+"');$('#source_" + sourcecounter+"').remove();");
-          box2.append(img);
+          box2.append(getDeleteIcon("#source_" + sourcecounter));
 
           box1.append(box2);
 
@@ -841,10 +899,6 @@ function getPropertyPaths()
           box2.addClass('content');
           box1.append(box2);
 
-          box1.draggable(
-          {
-            containment: '.droppable'
-          });
           return box1;
         }
       });
@@ -858,7 +912,7 @@ function getPropertyPaths()
     var box = $(document.createElement('div'));
     box.addClass('draggable');
     box.attr("id", "source" + global_id);
-    box.html("<span> </span><small> </small><p> </p>");
+    box.html("<span> </span><small> </small><p>(custom path)</p>");
     box.draggable(
     {
       helper: function ()
@@ -866,7 +920,6 @@ function getPropertyPaths()
         var box1 = $(document.createElement('div'));
         box1.addClass('dragDiv sourcePath');
         box1.attr("id", "source_" + sourcecounter);
-        box1.attr("style", "z-index:10;");
 
         var box2 = $(document.createElement('small'));
         box2.addClass('name');
@@ -880,17 +933,15 @@ function getPropertyPaths()
 
         var box2 = $(document.createElement('h5'));
         box2.addClass('handler');
+        box2.attr("style", "height: 19px;");
 
         var input = $(document.createElement('input'));
         input.attr("style", "width: 165px;");
         input.attr("type", "text");
+        input.val("?" + sourceDataSetVar);
         box2.append(input);
 
-        var img = $(document.createElement('img'));
-        img.attr("src", "static/img/delete.png");
-        img.attr("align", "right");
-        img.attr("onclick", "jsPlumb.removeAllEndpoints('#source_" + sourcecounter+"');$('#source_" + sourcecounter+"').remove();");
-        box2.append(img);
+        box2.append(getDeleteIcon("#source_" + sourcecounter));
 
         box1.append(box2);
 
@@ -898,10 +949,6 @@ function getPropertyPaths()
         box2.addClass('content');
         box1.append(box2);
 
-        box1.draggable(
-        {
-          containment: '.droppable'
-        });
         return box1;
       }
     });
@@ -945,8 +992,6 @@ function getPropertyPaths()
           var box1 = $(document.createElement('div'));
           box1.addClass('dragDiv targetPath');
           box1.attr("id", "target_" + targetcounter);
-          box1.attr("style", "z-index:10;");
-          //box1.html("<small class=\"name\">" + encodeHtml(item.path) + "</small><small class=\"type\">Input</small><h5 class='handler'>" + encodeHtml(item.path) + "<img src=\"static/img/delete.png\" align=\"right\" onclick=\"jsPlumb.removeAllEndpoints('#target_" + targetcounter+"');$('#target_" + targetcounter+"').remove();\"/></h5><div class='content'></div>");
 
           var box2 = $(document.createElement('small'));
           box2.addClass('name');
@@ -965,16 +1010,12 @@ function getPropertyPaths()
 
           var span = $(document.createElement('div'));
           span.attr("style", "width: 170px; white-space:nowrap; overflow:hidden; float: left;");
-          span.attr("title", encodeHtml(item.path))
-          var mytext = document.createTextNode(encodeHtml(item.path));
+          span.attr("title", item.path);
+          var mytext = document.createTextNode(item.path);
           span.append(mytext);
           box2.append(span);
 
-          var img = $(document.createElement('img'));
-          img.attr("src", "static/img/delete.png");
-          img.attr("align", "right");
-          img.attr("onclick", "jsPlumb.removeAllEndpoints('#target_" + targetcounter+"');$('#target_" + targetcounter+"').remove();");
-          box2.append(img);
+          box2.append(getDeleteIcon("#target_" + targetcounter));
 
           box1.append(box2);
 
@@ -982,10 +1023,6 @@ function getPropertyPaths()
           box2.addClass('content');
           box1.append(box2);
 
-          box1.draggable(
-          {
-            containment: '.droppable'
-          });
           return box1;
         }
       });
@@ -998,7 +1035,7 @@ function getPropertyPaths()
     var box = $(document.createElement('div'));
     box.addClass('draggable');
     box.attr("id", "target" + global_id);
-    box.html("<span> </span><small> </small><p> </p>");
+    box.html("<span> </span><small> </small><p>(custom path)</p>");
     box.draggable(
     {
       helper: function ()
@@ -1006,7 +1043,6 @@ function getPropertyPaths()
         var box1 = $(document.createElement('div'));
         box1.addClass('dragDiv sourcePath');
         box1.attr("id", "source_" + sourcecounter);
-        box1.attr("style", "z-index:10;");
 
         var box2 = $(document.createElement('small'));
         box2.addClass('name');
@@ -1020,17 +1056,15 @@ function getPropertyPaths()
 
         var box2 = $(document.createElement('h5'));
         box2.addClass('handler');
+        box2.attr("style", "height: 19px;");
 
         var input = $(document.createElement('input'));
         input.attr("style", "width: 165px;");
         input.attr("type", "text");
+        input.val("?" + targetDataSetVar);
         box2.append(input);
 
-        var img = $(document.createElement('img'));
-        img.attr("src", "static/img/delete.png");
-        img.attr("align", "right");
-        img.attr("onclick", "jsPlumb.removeAllEndpoints('#source_" + sourcecounter+"');$('#source_" + sourcecounter+"').remove();");
-        box2.append(img);
+        box2.append(getDeleteIcon("#source_" + sourcecounter));
 
         box1.append(box2);
 
@@ -1038,15 +1072,11 @@ function getPropertyPaths()
         box2.addClass('content');
         box1.append(box2);
 
-        box1.draggable(
-        {
-          containment: '.droppable'
-        });
         return box1;
       }
     });
     box.appendTo("#targetpaths");
-
+    /*
     var availablePaths = data.target.availablePaths;
     if (max_paths < availablePaths)
     {
@@ -1055,6 +1085,7 @@ function getPropertyPaths()
       box.appendTo("#paths");
 
     }
+    */
     }
   });
 }
@@ -1086,6 +1117,7 @@ function getOperators()
         {
           transformations[item.id] = new Object();
           transformations[item.id]["name"] = item.label;
+          transformations[item.id]["description"] = item.description;
           transformations[item.id]["parameters"] = item.parameters;
 
           var box = $(document.createElement('div'));
@@ -1122,11 +1154,7 @@ function getOperators()
               span.append(mytext);
               box2.append(span);
 
-              var img = $(document.createElement('img'));
-              img.attr("src", "static/img/delete.png");
-              img.attr("align", "right");
-              img.attr("onclick", "jsPlumb.removeAllEndpoints('#transform_" + transformcounter+"');$('#transform_" + transformcounter+"').remove();");
-              box2.append(img);
+              box2.append(getDeleteIcon("#transform_" + transformcounter));
 
               box1.append(box2);
 
@@ -1150,6 +1178,8 @@ function getOperators()
                 box5.attr("size", "10");
                 box2.append(box5);
               });
+
+              box2.append(getHelpIcon(item.description, item.parameters.length));
 
               box1.append(box2);
               return box1;
@@ -1176,6 +1206,7 @@ function getOperators()
         {
           comparators[item.id] = new Object();
           comparators[item.id]["name"] = item.label;
+          comparators[item.id]["description"] = item.description;
           comparators[item.id]["parameters"] = item.parameters;
           var box = $(document.createElement('div'));
           box.addClass('draggable comparators');
@@ -1211,11 +1242,7 @@ function getOperators()
               span.append(mytext);
               box2.append(span);
 
-              var img = $(document.createElement('img'));
-              img.attr("src", "static/img/delete.png");
-              img.attr("align", "right");
-              img.attr("onclick", "jsPlumb.removeAllEndpoints('#compare_" + comparecounter+"');$('#compare_" + comparecounter+"').remove();");
-              box2.append(img);
+              box2.append(getDeleteIcon("#compare_" + comparecounter));
 
               box1.append(box2);
 
@@ -1245,7 +1272,7 @@ function getOperators()
 
               $.each(item.parameters, function (j, parameter)
               {
-			    var box4 = $(document.createElement('br'));
+			          var box4 = $(document.createElement('br'));
                 box2.append(box4);
 
                 var mytext = document.createTextNode(parameter.name + ": ");
@@ -1257,6 +1284,8 @@ function getOperators()
                 box5.attr("size", "10");;
                 box2.append(box5);
               });
+
+              box2.append(getHelpIcon(item.description));
 
               box1.append(box2);
 
@@ -1280,7 +1309,11 @@ function getOperators()
         var sourcepaths = data.aggregators;
         $.each(sourcepaths, function (i, item)
         {
-          aggregators[item.id] = item.label;
+          aggregators[item.id] = new Object();
+          aggregators[item.id]["name"] = item.label;
+          aggregators[item.id]["description"] = item.description;
+          aggregators[item.id]["parameters"] = item.parameters;
+
           var box = $(document.createElement('div'));
           box.addClass('draggable aggregators');
           box.attr("title", item.description);
@@ -1316,11 +1349,7 @@ function getOperators()
               span.append(mytext);
               box2.append(span);
 
-              var img = $(document.createElement('img'));
-              img.attr("src", "static/img/delete.png");
-              img.attr("align", "right");
-              img.attr("onclick", "jsPlumb.removeAllEndpoints('#aggregate_" + aggregatecounter+"');$('#aggregate_" + aggregatecounter+"').remove();");
-              box2.append(img);
+              box2.append(getDeleteIcon("#aggregate_" + aggregatecounter));
 
               box1.append(box2);
 
@@ -1348,7 +1377,6 @@ function getOperators()
               box5.attr("value", "1");
               box2.append(box5);
 
-              aggregators[item.id].parameters = item.parameters;
               $.each(item.parameters, function (j, parameter)
               {
                 var box4 = $(document.createElement('br'));
@@ -1363,6 +1391,8 @@ function getOperators()
                 box5.attr("size", "10");;
                 box2.append(box5);
               });
+
+              box2.append(getHelpIcon(item.description));
 
               box1.append(box2);
 			  

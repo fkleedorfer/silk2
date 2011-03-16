@@ -4,6 +4,7 @@ import de.fuberlin.wiwiss.silk.instance.Instance
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import java.util.logging.Logger
 import de.fuberlin.wiwiss.silk.linkspec._
+import de.fuberlin.wiwiss.silk.config.Prefixes
 
 case class ClassifierAggregation(required:Boolean, weight: Int, threshold:Double, features: Traversable[Feature], classifier: ClassifierAggregator) extends Operator with FeatureVectorEmitter
 {
@@ -67,4 +68,9 @@ case class ClassifierAggregation(required:Boolean, weight: Int, threshold:Double
       .foldLeft(Seq[Int]())((blockCounts1, blockCounts2) => classifier.combineBlockCounts(blockCounts1, blockCounts2))
   }
 
+  override def toXML(implicit prefixes : Prefixes) =
+  {
+      <Classify note="xml serialization not implemented yet">
+      </Classify>
+  }
 }

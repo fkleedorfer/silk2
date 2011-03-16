@@ -39,10 +39,19 @@ class XMLProject(linkSpec : Node) extends Project
   override val name : Identifier = "silk_"
 
    // Reads the project configuration.
-  override def config =   {  ProjectConfig()  }
+  override def config =
+  {
+    val prefixes = (doc \ "Prefixes" headOption).map(Prefixes.fromXML).getOrElse(Prefixes.empty)
+
+    ProjectConfig(prefixes)
+  }
 
    // Writes the updated project configuration.
-  override def config_=(config : ProjectConfig)     {}
+  override def config_=(config : ProjectConfig)
+  {
+    doc = new RuleTransformer(new RemoveNodeByLabel("Prefixes")).transform(doc).head
+    appendPrefixes(config.prefixes.toXML \ "Prefix")
+  }
 
    // The source module which encapsulates all data sources.
   override val sourceModule = new XMLSourceModule()
@@ -100,19 +109,19 @@ class XMLProject(linkSpec : Node) extends Project
 
     def tasks = synchronized
     {
-      var prefixes : Prefixes = null
-      if ((doc \ "Prefixes").size>0) {
-          prefixes =  Prefixes.fromXML((doc \ "Prefixes") (0))
-      }  else { prefixes = Prefixes.fromXML(<Prefixes />) }
+      implicit val prefixes = XMLProject.this.config.prefixes
 
      for(lt <- doc \ "Interlinks" \ "Interlink" ) yield {
-        val linkT = LinkSpecification.fromXML(lt,(prefixes))
-        val linkingTask = LinkingTask((lt \ "@id").text, prefixes, linkT, new Alignment(), new Cache())
+        val linkT = LinkSpecification.fromXML(lt)
+        val linkingTask = LinkingTask((lt \ "@id").text, linkT, new Alignment(), new Cache())
         linkingTask
       }
     }
 
-    def update(task : LinkingTask) = synchronized {
+    def update(task : LinkingTask) = synchronized
+    {
+      implicit val prefixes = XMLProject.this.config.prefixes
+
       // if any interlink is defined yet
       if ((doc \ "Interlinks").size == 0){
          doc = new RuleTransformer(new AddChildTo("Silk", <Interlinks />)).transform(doc).head

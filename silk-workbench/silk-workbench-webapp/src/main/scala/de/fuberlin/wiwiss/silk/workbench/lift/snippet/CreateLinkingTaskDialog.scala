@@ -4,7 +4,6 @@ import xml.NodeSeq
 import de.fuberlin.wiwiss.silk.config.Prefixes
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import de.fuberlin.wiwiss.silk.linkspec.condition.{LinkCondition}
-import de.fuberlin.wiwiss.silk.linkspec.{LinkFilter, DatasetSpecification, LinkSpecification}
 import de.fuberlin.wiwiss.silk.workbench.workspace.User
 import de.fuberlin.wiwiss.silk.workbench.Constants
 import de.fuberlin.wiwiss.silk.evaluation.Alignment
@@ -14,6 +13,7 @@ import net.liftweb.util.Helpers._
 import de.fuberlin.wiwiss.silk.workbench.workspace.modules.linking.{Cache, LinkingTask}
 import net.liftweb.http.js.JsCmds.OnLoad
 import net.liftweb.common.Empty
+import de.fuberlin.wiwiss.silk.linkspec.{Restrictions, LinkFilter, DatasetSpecification, LinkSpecification}
 
 /**
  * A dialog to create new linking tasks.
@@ -28,28 +28,25 @@ class CreateLinkingTaskDialog
     var sourceRestriction = ""
     var targetRestriction = ""
     var linkType = "http://www.w3.org/2002/07/owl#sameAs"
-    val prefixes = Map(
-      "rdf" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-      "rdfs" -> "http://www.w3.org/2000/01/rdf-schema#",
-      "owl" -> "http://www.w3.org/2002/07/owl#",
-      "foaf" -> "http://xmlns.com/foaf/0.1/")
 
-    def submit(prefixes : Prefixes) =
+    def submit() =
     {
       try
       {
+        implicit val prefixes = User().project.config.prefixes
+
         val linkSpec =
           LinkSpecification(
             id = name,
             linkType = linkType,
-            datasets = SourceTargetPair(DatasetSpecification(sourceId, Constants.SourceVariable, sourceRestriction),
-                                        DatasetSpecification(targetId, Constants.TargetVariable, targetRestriction)),
+            datasets = SourceTargetPair(DatasetSpecification(sourceId, Constants.SourceVariable, Restrictions.fromSparql(sourceRestriction)),
+                                        DatasetSpecification(targetId, Constants.TargetVariable, Restrictions.fromSparql(targetRestriction))),
             condition = LinkCondition(None),
             filter = LinkFilter(0.95, None),
             outputs = Nil
           )
 
-        val linkingTask = LinkingTask(name, prefixes, linkSpec, Alignment(), new Cache())
+        val linkingTask = LinkingTask(name, linkSpec, Alignment(), new Cache())
 
         User().project.linkingModule.update(linkingTask)
 
@@ -57,37 +54,43 @@ class CreateLinkingTaskDialog
       }
       catch
       {
-        case ex : Exception => JsRaw("alert('" + ex.getMessage.encJs + "');").cmd
+        case ex : Exception => Workspace.hideLoadingDialogCmd & JsRaw("alert('" + ex.getMessage.encJs + "');").cmd
       }
     }
 
     SHtml.ajaxForm(
       bind("entry", xhtml,
-         "name" -> SHtml.text(name, name = _, "size" -> "60"),
-         "sourceId" -> SHtml.untrustedSelect(Nil, Empty, sourceId = _, "id" -> "selectSourceId"),
-         "sourceRestriction" -> SHtml.text(sourceRestriction, sourceRestriction = _, "size" -> "60"),
-         "targetId" -> SHtml.untrustedSelect(Nil, Empty, targetId = _, "id" -> "selectTargetId"),
-         "targetRestriction" -> SHtml.text(targetRestriction, targetRestriction = _, "size" -> "60"),
-         "linkType" -> SHtml.text(linkType, linkType = _, "size" -> "60"),
-         "prefixes" -> CreateLinkingTaskDialog.prefixEditor.show(prefixes),
-         "submit" -> SHtml.ajaxSubmit("Create", () => CreateLinkingTaskDialog.prefixEditor.read(submit))))
+         "name" -> SHtml.text(name, name = _, "id" -> "sourceName", "size" -> "60", "title" -> "Linking task name"),
+         "sourceId" -> SHtml.untrustedSelect(Nil, Empty, sourceId = _, "id" -> "selectSourceId", "title" -> "Source dataset"),
+         "sourceRestriction" -> SHtml.text(sourceRestriction, sourceRestriction = _, "id" -> "sourceRes", "size" -> "60", "title" -> "Restrict source dataset using SPARQL clauses" ),
+         "targetId" -> SHtml.untrustedSelect(Nil, Empty, targetId = _, "id" -> "selectTargetId",  "title" -> "Target dataset"),
+         "targetRestriction" -> SHtml.text(targetRestriction, targetRestriction = _, "id" -> "targetRes", "size" -> "60", "title" -> "Restrict target dataset using SPARQL clauses"),
+         "linkType" -> SHtml.text(linkType, linkType = _, "id" -> "linkType", "size" -> "60",  "title" -> "Type of the generated link"),
+         "submit" -> SHtml.ajaxSubmit("Create", submit)))
   }
 }
 
 object CreateLinkingTaskDialog
 {
-  private val prefixEditor = new PrefixEditor()
-
   def initCmd = OnLoad(JsRaw("$('#createLinkingTaskDialog').dialog({ autoOpen: false, width: 700, modal: true })").cmd)
 
   def openCmd =
   {
     val sourceOptions = for(task <- User().project.sourceModule.tasks) yield <option value={task.name}>{task.name}</option>
 
+    //Clear name
+    JsRaw("$('#sourceName').val('');").cmd &
+    //Update source options
     JsRaw("$('#selectSourceId').children().remove();").cmd &
     JsRaw("$('#selectSourceId').append('" + sourceOptions.mkString + "');").cmd &
     JsRaw("$('#selectTargetId').children().remove();").cmd &
     JsRaw("$('#selectTargetId').append('" + sourceOptions.mkString + "');").cmd &
+    //Clear restrictions
+    JsRaw("$('#sourceRes').val('');").cmd &
+    JsRaw("$('#targetRes').val('');").cmd &
+    //Reset link type
+    JsRaw("$('#linkType').val('http://www.w3.org/2002/07/owl#sameAs');").cmd &
+    //Open dialog
     JsRaw("$('#createLinkingTaskDialog').dialog('open');").cmd
   }
 

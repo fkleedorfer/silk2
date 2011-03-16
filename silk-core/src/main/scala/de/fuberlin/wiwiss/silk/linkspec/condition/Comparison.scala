@@ -4,6 +4,7 @@ import de.fuberlin.wiwiss.silk.instance.Instance
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import java.util.logging.Logger
 import de.fuberlin.wiwiss.silk.linkspec.input.Input
+import de.fuberlin.wiwiss.silk.config.Prefixes
 
 /**
  * A comparison computes the similarity of two inputs.
@@ -63,4 +64,16 @@ case class Comparison(required : Boolean, weight : Int, threshold: Double, input
    * The number of blocks in each dimension of the index.
    */
   override val blockCounts = metric.blockCounts
+
+  override def toXML(implicit prefixes : Prefixes) = metric match
+  {
+    case Metric(id, params) =>
+    {
+      <Compare required={required.toString} weight={weight.toString} metric={id}>
+        { inputs.source.toXML }
+        { inputs.target.toXML }
+        { params.map{case (name, value) => <Param name={name} value={value} />} }
+      </Compare>
+    }
+  }
 }

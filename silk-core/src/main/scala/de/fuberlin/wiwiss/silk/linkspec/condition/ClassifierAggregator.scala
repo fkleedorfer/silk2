@@ -3,6 +3,7 @@ package de.fuberlin.wiwiss.silk.linkspec.condition
 import scala.math.max
 import de.fuberlin.wiwiss.silk.util.strategy.{StrategyDefinition, Factory, Strategy}
 import java.util.logging.Logger
+import de.fuberlin.wiwiss.silk.config.Prefixes
 
 trait ClassifierAggregator extends Strategy
 {
@@ -48,6 +49,8 @@ trait FlatIndexClassifierAggregator extends ClassifierAggregator
   {
     threshold
   }
+
+
 }
 
 trait MultiIndexClassifierAggregator extends ClassifierAggregator
@@ -76,4 +79,6 @@ trait MultiIndexClassifierAggregator extends ClassifierAggregator
   {
     1.0 - ((1.0 - threshold) / weight)
   }
+
+
 }

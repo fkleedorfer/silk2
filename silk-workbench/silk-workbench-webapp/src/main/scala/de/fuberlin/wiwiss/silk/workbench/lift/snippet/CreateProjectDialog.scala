@@ -26,13 +26,13 @@ class CreateProjectDialog
       }
       catch
       {
-        case ex : Exception => JsRaw("alert('" + ex.getMessage.encJs + "');").cmd
+        case ex : Exception => Workspace.hideLoadingDialogCmd & JsRaw("alert('" + ex.getMessage.encJs + "');").cmd
       }
     }
 
     SHtml.ajaxForm(
       bind("entry", xhtml,
-         "name" -> SHtml.text(name, name = _, "size" -> "60"),
+         "name" -> SHtml.text(name, name = _, "id" -> "projectName", "size" -> "60","title" -> "Project name"),
          "submit" -> SHtml.ajaxSubmit("Create", submit)))
   }
 }
@@ -41,5 +41,5 @@ object CreateProjectDialog
 {
   def initCmd = OnLoad(JsRaw("$('#createProjectDialog').dialog({ autoOpen: false, width: 700, modal: true })").cmd)
 
-  def openCmd = JsRaw("$('#createProjectDialog').dialog('open');").cmd
+  def openCmd = JsRaw("$('#projectName').val('');").cmd & JsRaw("$('#createProjectDialog').dialog('open');").cmd
 }
