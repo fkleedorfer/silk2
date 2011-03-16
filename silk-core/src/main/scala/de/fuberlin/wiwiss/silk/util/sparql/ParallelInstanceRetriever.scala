@@ -38,8 +38,6 @@ class ParallelInstanceRetriever(endpoint : SparqlEndpoint, pageSize : Int = 1000
       while(pathRetrievers.forall(_.hasNext))
       {
         val pathValues = for(pathRetriever <- pathRetrievers) yield pathRetriever.next()
-        System.out.println("read path values: " + pathValues)
-        System.out.println("creating new instance: " + new Instance(pathValues.head.uri, pathValues.map(_.values).toIndexedSeq, instanceSpec))
         f(new Instance(pathValues.head.uri, pathValues.map(_.values).toIndexedSeq, instanceSpec))
       }
     }
@@ -123,8 +121,7 @@ class ParallelInstanceRetriever(endpoint : SparqlEndpoint, pageSize : Int = 1000
           sparql += SparqlPathBuilder(path :: Nil, "?" + instanceSpec.variable, "?" + varPrefix)
         }
       }
-      sparql += "}"
-      System.out.println("executing sparql:" + sparql)
+      sparql += "} order by ?" + instanceSpec.variable
       endpoint.query(sparql)
     }
 
@@ -150,7 +147,6 @@ class ParallelInstanceRetriever(endpoint : SparqlEndpoint, pageSize : Int = 1000
             {
               Thread.sleep(100)
             }
-            System.out.println("enqueing: "+PathValues(currentSubject.get, currentValues))
             queue.enqueue(PathValues(currentSubject.get, currentValues))
 
             currentSubject = Some(subject)
@@ -163,11 +159,8 @@ class ParallelInstanceRetriever(endpoint : SparqlEndpoint, pageSize : Int = 1000
           currentValues += node.value
         }
       }
-      System.out.println("parsed results for fixed Subject " + fixedSubject + ", sparqlResults: " + sparqlResults);
-      System.out.println("parsed values: " + currentValues);
       for(s <- currentSubject)
       {
-        System.out.println("enqueuing path values: for subj" + s + " curVals: " + currentValues);
         queue.enqueue(PathValues(s, currentValues))
       }
     }
