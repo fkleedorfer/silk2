@@ -27,8 +27,7 @@ case class Comparison(required : Boolean, weight : Int, threshold: Double, input
     val set1 = inputs.source(instances)
     val set2 = inputs.target(instances)
     
-    logger.fine("comparison.apply: set1=" + set1 + ", set2=" + set2)
-    
+
     if(!set1.isEmpty && !set2.isEmpty)
     {
       val similarities = for (str1 <- set1; str2 <- set2) yield metric.evaluate(str1, str2, threshold)
