@@ -94,7 +94,7 @@ class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: 
           } else {
             if (classifierResult.length == 1) {
               //logger.info("weka classifier: classification result = 0 (" + classifierResult(0)+")")
-              Some(classifierResult(0))
+              Some(math.min(1.0,math.max(0.0,classifierResult(0))))
             } else {
 
               //length is 2
@@ -102,7 +102,7 @@ class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: 
               if (classifierResult(this.classAttributeTrueIndex) > classifierResult(this.classAttributeFalseIndex)) {
                 //logger.info("weka classifier: returning true class with confidence " + classifierResult(this.classAttributeTrueIndex))
                 //logger.info("weka classifier: complete result: size=" + classifierResult.size + "; data=(" + classifierResult(0) + ", " + classifierResult(1)+")")
-                Some(classifierResult(this.classAttributeTrueIndex))
+                Some(math.min(1.0,math.max(0.0,classifierResult(this.classAttributeTrueIndex))))
               } else {
                 //logger.info("weka classifier: returning false")
                 Some(0.0)
