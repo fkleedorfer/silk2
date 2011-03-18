@@ -26,16 +26,17 @@ case class Aggregation(required : Boolean, weight : Int, threshold: Double, oper
       {
         val value = operator(instances, aggregator.computeThreshold(threshold, operator.weight.toDouble / totalWeights))
         if(operator.required && value.isEmpty) return None
-        val actualValue = value.getOrElse(0.0)
-        if (actualValue >= this.threshold){
-          (operator.weight, actualValue)
-        } else {
-          return None
-        }
+        (operator.weight,value.getOrElse(0.0))
       }
     }
-
-    aggregator.evaluate(weightedValues)
+    if (required && weightedValues.size == 0) return None
+    var result = aggregator.evaluate(weightedValues)
+    if (result.isEmpty) return None
+    var actualValue=result.get
+    if (actualValue < this.threshold){
+      return None
+    }
+    result
   }
 
   /**
