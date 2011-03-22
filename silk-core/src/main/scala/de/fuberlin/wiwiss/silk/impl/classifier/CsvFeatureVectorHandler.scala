@@ -40,7 +40,7 @@ class CsvFeatureVectorHandler(file: String, classField: String, negativeExampleP
         if (!initialized){
           initialize(featureVector)
         }
-        //def line = comparisonVector.map(v=>v._2).map(v => v match {case null => "?";case _ => v.get}).mkString(";")
+        //System.out.println("handling feature vector:" + featureVector)
         //logger.info("writing comparison vector to csv file: " + comparisonVector);
         val randomValue = random.nextDouble()
         //logger.info("csv handling feature vector:" + featureVector)
