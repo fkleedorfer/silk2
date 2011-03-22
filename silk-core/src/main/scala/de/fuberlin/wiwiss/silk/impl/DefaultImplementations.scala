@@ -53,6 +53,7 @@ object DefaultImplementations
         Aggregator.register(classOf[MinimumAggregator])
         Aggregator.register(classOf[QuadraticMeanAggregator])
         Aggregator.register(classOf[GeometricMeanAggregator])
+        Aggregator.register(classOf[SumAggregator])
         
         FeatureVectorHandler.register(classOf[CsvFeatureVectorHandler])
         ClassifierAggregator.register(classOf[RandomClassifierAggregator])
