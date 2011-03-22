@@ -37,9 +37,9 @@ trait Feature
 
   def apply(instances : SourceTargetPair[Instance], threshold: Double) : Option[FeatureInstance]
 
-  def index(instance : Instance, threshold : Double) : Set[Seq[Int]]
+  def index(instance : Instance, threshold : Double) : Set[Seq[Int]] = Set(Seq(0))
 
-  val blockCounts : Seq[Int]
+  val blockCounts : Seq[Int] = Seq(1)
 }
 
 trait Extractor extends Strategy
@@ -168,6 +168,7 @@ case class OperatorFeature(featureName: String, dataType: String, required: Bool
   override def apply(instances : SourceTargetPair[Instance], threshold : Double) : Option[FeatureInstance] =
   {
     val operatorResult = operator.apply(instances,threshold);
+    //System.out.println("featureName:" + featureName + ", result:" + operatorResult)
     if (operatorResult.isEmpty)
       if (required){
         None
