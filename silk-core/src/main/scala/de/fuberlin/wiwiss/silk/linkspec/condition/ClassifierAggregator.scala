@@ -32,7 +32,7 @@ trait FlatIndexClassifierAggregator extends ClassifierAggregator
   override def combineIndexes(indexSet1 : Set[Seq[Int]], blockCounts1 : Seq[Int],
                               indexSet2 : Set[Seq[Int]], blockCounts2 : Seq[Int]) : Set[Seq[Int]] =
   {
-    logger.fine("combining indexes. Set1=" + indexSet1 + ", Set2=" + indexSet2);
+    //logger.fine("combining indexes. Set1=" + indexSet1 + ", Set2=" + indexSet2);
     val newIndexSet1 = indexSet1.map(_.padTo(max(blockCounts1.size, blockCounts2.size), 0))
     val newIndexSet2 = indexSet2.map(_.zipAll(blockCounts2, 0, 0).map{ case (indexValue, blockCount) => blockCount + indexValue })
 
@@ -59,7 +59,7 @@ trait MultiIndexClassifierAggregator extends ClassifierAggregator
   override def combineIndexes(indexSet1 : Set[Seq[Int]], blockCounts1 : Seq[Int],
                               indexSet2 : Set[Seq[Int]], blockCounts2 : Seq[Int]) : Set[Seq[Int]] =
   {
-    logger.fine("combining indexes. Set1=" + indexSet1 + ", Set2=" + indexSet2);
+    //logger.fine("combining indexes. Set1=" + indexSet1 + ", Set2=" + indexSet2);
     val indexes1 = if(indexSet1.isEmpty) Set(Seq.fill(blockCounts1.size)(0)) else indexSet1
     val indexes2 = if(indexSet2.isEmpty) Set(Seq.fill(blockCounts2.size)(0)) else indexSet2
 
