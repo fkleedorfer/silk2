@@ -76,6 +76,7 @@ object LinkSpecification
     {
       case node @ <Aggregate>{_*}</Aggregate> => readAggregation(node, prefixes)
       case node @ <Compare>{_*}</Compare> => readComparison(node, prefixes)
+      case node @ <Random>{_*}</Random> => readRandomOperator(node, prefixes)
       case node @ <Classify>{_*}</Classify> => readClassifierAggregation(node,prefixes)
     }
   }
@@ -212,6 +213,21 @@ object LinkSpecification
       if(thresholdStr.isEmpty) 0.0 else thresholdStr.toDouble,
       SourceTargetPair(inputs(0), inputs(1)),
       metric
+    )
+  }
+
+  private def readRandomOperator(node : Node, prefixes : Map[String, String]) : RandomOperator =
+  {
+    val requiredStr = node \ "@required" text
+    val weightStr = node \ "@weight" text
+    val thresholdStr = node \ "@threshold" text
+    val randomGenerator = RandomGenerator(node \ "@generator" text, readParams(node))
+    logger.info("read random generator: " + randomGenerator)
+    new RandomOperator(
+      if(requiredStr.isEmpty) false else requiredStr.toBoolean,
+      if(weightStr.isEmpty) 1 else weightStr.toInt,
+      if(thresholdStr.isEmpty) 0.0 else thresholdStr.toDouble,
+      randomGenerator
     )
   }
 

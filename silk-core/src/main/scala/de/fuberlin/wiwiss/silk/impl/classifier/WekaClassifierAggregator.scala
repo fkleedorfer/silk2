@@ -1,12 +1,11 @@
 package de.fuberlin.wiwiss.silk.impl.classifier
 
-import de.fuberlin.wiwiss.silk.linkspec.condition.MultiIndexAggregator
 import de.fuberlin.wiwiss.silk.util.strategy.StrategyAnnotation
-import de.fuberlin.wiwiss.silk.linkspec.condition.{FeatureInstance, MultiIndexClassifierAggregator}
 import weka.classifiers.Classifier
 import java.io.{File, ObjectInputStream, FileInputStream}
 import weka.core.converters.{CSVLoader, ArffLoader}
 import java.util.logging.Logger
+import de.fuberlin.wiwiss.silk.linkspec.condition.{FlatIndexClassifierAggregator, MultiIndexAggregator, FeatureInstance, MultiIndexClassifierAggregator}
 
 @StrategyAnnotation(id = "weka", label = "WekaClassifier", description = "Classifier implementation that uses a serialized weka classifier")
 class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: String = "__no_file__", csvDatasetFileName: String = "__no_file__", classField: String) extends MultiIndexClassifierAggregator
@@ -160,7 +159,7 @@ class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: 
             }
           } catch {
             case e: Exception => {
-              logger.severe("cannot create weka attribute, treating as missing. Feature=" + feature + ", cause: " + e.getMessage)
+              //logger.severe("cannot create weka attribute, treating as missing. Feature=" + feature + ", cause: " + e.getMessage)
               wekaInstance.setMissing(wekaAttribute);
             }
           }

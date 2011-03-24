@@ -122,6 +122,35 @@ class IdenticalValuesExtractor() extends Extractor
       None
     }
   }
+
+  override def index(value : String, threshold : Double = 0.0) : Set[Seq[Int]] = metric.index(value, threshold).toSet
+
+  override val blockCounts = metric.blockCounts
+}
+
+/**
+ * Extracts the smallest value from the inputs
+ */
+@StrategyAnnotation(id = "min", label = "Minimum Value Extractor", description = "Extracts the smallest value from the inputs")
+class MinimumValuesExtractor() extends Extractor
+{
+  private val logger = Logger.getLogger(classOf[ExtractorFeature].getName)
+  def apply(instances : SourceTargetPair[Instance], inputs: SourceTargetPair[Input], threshold: Double) : Option[String] =
+  {
+    //logger.info("comparing geocode quality")
+    val set1 = inputs.source(instances)
+    val set2 = inputs.target(instances)
+
+    //logger.info("extractionFeature.apply: threshold=" + threshold + ", set1=" + set1 + ", set2=" + set2)
+    if(!set1.isEmpty && !set2.isEmpty)
+    {
+      val allValues = set1 ++ set2
+      //logger.info("computing minimum of geocodes:" + allValues + ": " + allValues.min)
+      Some(allValues.min.toString)
+    } else {
+      None
+    }
+  }
 }
 
 /**
@@ -150,8 +179,7 @@ case class ExtractorFeature(featureName: String, dataType: String, required: Boo
 
   override def index(instance : Instance, threshold : Double) : Set[Seq[Int]] =
   {
-
-   val values = inputs.source(SourceTargetPair(instance, instance)) ++ inputs.target(SourceTargetPair(instance, instance))
+    val values = inputs.source(SourceTargetPair(instance, instance)) ++ inputs.target(SourceTargetPair(instance, instance))
     values.flatMap(value => extractor.index(value, threshold)).toSet
   }
 

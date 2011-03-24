@@ -1,6 +1,6 @@
 package de.fuberlin.wiwiss.silk.impl
 
-import classifier.{WekaClassifierAggregator, FalseClassifierAggregator, RandomClassifierAggregator}
+import classifier.{BooleanRandomGenerator, WekaClassifierAggregator, FalseClassifierAggregator, RandomClassifierAggregator}
 import datasource._
 import transformer._
 import aggegrator._
@@ -62,11 +62,14 @@ object DefaultImplementations
 
         Extractor.register(classOf[SingleValueExtractor])
         Extractor.register(classOf[IdenticalValuesExtractor])
+        Extractor.register(classOf[MinimumValuesExtractor])
 
         LinkWriter.register(classOf[FileWriter])
         LinkWriter.register(classOf[MemoryWriter])
 
         Formatter.register(classOf[NTriplesFormatter])
         Formatter.register(classOf[AlignmentFormatter])
+
+        RandomGenerator.register(classOf[BooleanRandomGenerator])
     }
 }

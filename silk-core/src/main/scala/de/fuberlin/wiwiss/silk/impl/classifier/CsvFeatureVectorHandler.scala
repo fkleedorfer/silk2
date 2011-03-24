@@ -22,18 +22,21 @@ class CsvFeatureVectorHandler(file: String, classField: String, negativeExampleP
     }
 
     private def initialize(featureVector: Traversable[Option[FeatureInstance]]) = {
-      writer.println(featureVector.map{
-        case Some(featureInstance) => featureInstance.featureName
-        case _ => "no name"
-      }.mkString(","))
-      writer.flush()
+      if (!CsvFeatureVectorHandler.headerHasBeenPrinted) {
+        CsvFeatureVectorHandler.headerHasBeenPrinted = false
+        writer.println(featureVector.map{
+          case Some(featureInstance) => featureInstance.featureName
+          case _ => "no name"
+        }.mkString(","))
+        writer.flush()
+      }
       classFieldIndex = featureVector.toList.indexWhere
         {
           case None => false
           case Some(inst:FeatureInstance) => inst.featureName == this.classField
         }
       logger.info("class field index = " + classFieldIndex)
-      initialized = true
+      this.initialized = true
     }
 
     override def handleFeatureVector(featureVector : Traversable[Option[FeatureInstance]]) = {
@@ -49,6 +52,7 @@ class CsvFeatureVectorHandler(file: String, classField: String, negativeExampleP
           threshold = positiveExampleProbability
         } else {
           threshold = negativeExampleProbability
+          //System.out.println("using negative example if randomValue: " + randomValue + " is <= threshold:" + threshold)
         }
 
         if (randomValue <= threshold) {
@@ -104,3 +108,7 @@ class CsvFeatureVectorHandler(file: String, classField: String, negativeExampleP
 
 }
 
+object CsvFeatureVectorHandler {
+  private var headerHasBeenPrinted:Boolean = false
+
+}

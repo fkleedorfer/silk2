@@ -57,9 +57,26 @@
         <xs:choice minOccurs="0" maxOccurs="unbounded">
           <xs:element ref="Aggregate" />
           <xs:element ref="Compare" />
+            <xs:element ref="Random" />
         </xs:choice>
       </xs:sequence>
       <xs:attribute name="type" type="xs:string" use="required" />
+      <xs:attribute name="weight" type="xs:unsignedShort" />
+      <xs:attribute name="required" type="xs:boolean" />
+      <xs:attribute name="threshold" type="xs:double" />
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- element that can be used where "Compare" can be used. It generates a random value,
+  depending on the specified randomGenerator
+  -->
+  <xs:element name="Random">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="Param" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="generator" type="xs:string" use="required" />
       <xs:attribute name="weight" type="xs:unsignedShort" />
       <xs:attribute name="required" type="xs:boolean" />
       <xs:attribute name="threshold" type="xs:double" />

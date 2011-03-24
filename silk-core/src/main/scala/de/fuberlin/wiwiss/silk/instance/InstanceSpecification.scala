@@ -1,8 +1,7 @@
 package de.fuberlin.wiwiss.silk.instance
 
 import de.fuberlin.wiwiss.silk.linkspec._
-import condition.{Feature, ExtractorFeature, OperatorFeature, ClassifierAggregation}
-import condition.{Operator, Comparison, Aggregation}
+import condition._
 import input.{TransformInput, PathInput, Input}
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import xml.Node
@@ -85,6 +84,7 @@ object InstanceSpecification
       val targetPaths = collectPathsFromInput(variable)(comparison.inputs.target)
       (sourcePaths ++ targetPaths).toSet
     }
+    case randomOperator: RandomOperator => Set()
   }
 
   private def collectPathsFromInput(variable : String)(param : Input) : Set[Path] = param match
