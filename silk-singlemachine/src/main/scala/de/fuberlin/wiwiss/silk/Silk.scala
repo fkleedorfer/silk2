@@ -125,7 +125,15 @@ object Silk
     {
       val sources = linkSpec.datasets.map(_.sourceId).map(config.source(_))
 
-      def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold).map(_ % config.blocking.map(_.blocks).getOrElse(1))
+      def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold).map(x => {
+        val blocks = config.blocking.map(_.blocks).getOrElse(1)
+        val blockIndex = x % blocks
+        if (blockIndex < 0 ) {
+          blockIndex + blocks
+        } else {
+          blockIndex
+        }
+      })
 
       val loadTask = new LoadTask(sources, caches, instanceSpecs, if(config.blocking.isDefined) Some(blockingFunction _) else None)
       loader = loadTask.runInBackground()
