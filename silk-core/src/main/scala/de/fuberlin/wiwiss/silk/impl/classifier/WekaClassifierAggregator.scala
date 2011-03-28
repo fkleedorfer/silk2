@@ -8,7 +8,7 @@ import java.util.logging.Logger
 import de.fuberlin.wiwiss.silk.linkspec.condition.{FlatIndexClassifierAggregator, MultiIndexAggregator, FeatureInstance, MultiIndexClassifierAggregator}
 
 @StrategyAnnotation(id = "weka", label = "WekaClassifier", description = "Classifier implementation that uses a serialized weka classifier")
-class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: String = "__no_file__", csvDatasetFileName: String = "__no_file__", classField: String) extends MultiIndexClassifierAggregator
+class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: String = "__no_file__", csvDatasetFileName: String = "__no_file__", classField: String) extends FlatIndexClassifierAggregator
 {
   private val logger = Logger.getLogger(classOf[WekaClassifierAggregator].getName)
   val serializedClassifierFile = new File(classifierFileName)
