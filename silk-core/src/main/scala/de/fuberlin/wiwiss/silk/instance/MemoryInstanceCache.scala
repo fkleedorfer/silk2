@@ -1,13 +1,16 @@
 package de.fuberlin.wiwiss.silk.instance
 
 import collection.mutable.ArrayBuffer
+import java.util.logging.Logger
 
 /**
  * An instance cache, which caches the instance in memory and allows adding new instances at runtime.
  */
-class MemoryInstanceCache(val blockCount : Int = 1, maxPartitionSize : Int = 1000) extends InstanceCache
+class MemoryInstanceCache(instanceSpec : InstanceSpecification, val blockCount : Int = 1, maxPartitionSize : Int = 1000) extends InstanceCache
 {
-  private var blocks = IndexedSeq.fill(blockCount)(new Block)
+  private val logger = Logger.getLogger(getClass.getName)
+
+  private var blocks = IndexedSeq.tabulate(blockCount)(new Block(_))
 
   private var allInstances = Set[String]()
 
@@ -20,6 +23,7 @@ class MemoryInstanceCache(val blockCount : Int = 1, maxPartitionSize : Int = 100
    */
   override def write(instances : Traversable[Instance], blockingFunction : Option[Instance => Set[Int]] = None)
   {
+    val startTime = System.currentTimeMillis()
     writing = true
 
     try
@@ -28,6 +32,9 @@ class MemoryInstanceCache(val blockCount : Int = 1, maxPartitionSize : Int = 100
       {
         add(instance, blockingFunction)
       }
+
+      val time = ((System.currentTimeMillis - startTime) / 1000.0)
+      logger.info("Finished writing " + instanceCounter + " instances with type '" + instanceSpec.restrictions + "' in " + time + " seconds")
     }
     finally
     {
@@ -56,7 +63,7 @@ class MemoryInstanceCache(val blockCount : Int = 1, maxPartitionSize : Int = 100
   override def clear()
   {
     instanceCounter = 0
-    blocks = IndexedSeq.fill(blockCount)(new Block)
+    blocks = IndexedSeq.tabulate(blockCount)(new Block(_))
     allInstances = Set[String]()
   }
 
@@ -76,7 +83,7 @@ class MemoryInstanceCache(val blockCount : Int = 1, maxPartitionSize : Int = 100
    */
   override def partitionCount(block : Int) = blocks(block).size
 
-  private class Block
+  private class Block(block : Int)
   {
     private val partitions = ArrayBuffer(ArrayBuffer[Instance]())
 
@@ -91,6 +98,7 @@ class MemoryInstanceCache(val blockCount : Int = 1, maxPartitionSize : Int = 100
       else
       {
         partitions.append(ArrayBuffer(instance))
+        logger.info("Written partition " + (partitions.size - 2) + " of block " + block)
       }
     }
 

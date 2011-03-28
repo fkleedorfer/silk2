@@ -1,10 +1,12 @@
 package de.fuberlin.wiwiss.silk.workbench.evaluation
 
 import java.util.logging.Logger
-import de.fuberlin.wiwiss.silk.{MatchTask, LoadTask}
 import de.fuberlin.wiwiss.silk.workbench.workspace.User
 import de.fuberlin.wiwiss.silk.util.{SourceTargetPair, Task}
 import de.fuberlin.wiwiss.silk.instance.{InstanceCache, Instance, InstanceSpecification, MemoryInstanceCache}
+import de.fuberlin.wiwiss.silk.{FilterTask, MatchTask, LoadTask}
+import collection.mutable.Buffer
+import de.fuberlin.wiwiss.silk.output.Link
 
 object EvaluationServer
 {
@@ -22,13 +24,33 @@ object EvaluationServer
     private val linkingTask = User().linkingTask
     private val linkSpec = linkingTask.linkSpec
     private val blockCount = project.linkingModule.config.blocking.map(_.blocks).getOrElse(1)
+    private val instanceSpecs = InstanceSpecification.retrieve(linkSpec)
+
+    private val sources = linkSpec.datasets.map(_.sourceId).map(project.sourceModule.task(_).source)
+
+    private def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold).map(_ % blockCount)
 
     //Instance caches
-    val caches = SourceTargetPair.fill[InstanceCache](new MemoryInstanceCache(blockCount, 100))
+    private val caches = SourceTargetPair(new MemoryInstanceCache(instanceSpecs.source, blockCount, 300),
+                                          new MemoryInstanceCache(instanceSpecs.target, blockCount, 300))
+
+    private val loadTask = new LoadTask(sources, caches, instanceSpecs, if(blockCount > 0) Some(blockingFunction _) else None)
 
     private val matchTask = new MatchTask(linkingTask.linkSpec, caches, 8)
 
-    def links = matchTask.links.map(link => (link, false))
+    private var filteredLinks : Buffer[Link] = null
+
+    def links : Traversable[(Link, Boolean)] =
+    {
+      if(filteredLinks == null)
+      {
+        matchTask.links.map(link => (link, false))
+      }
+      else
+      {
+        filteredLinks.map(link => (link, false))
+      }
+    }
 
     override def execute() =
     {
@@ -72,20 +94,23 @@ object EvaluationServer
 
     private def generateAllLinks() =
     {
-      //Retrieve sources
-      val sources = linkSpec.datasets.map(_.sourceId).map(project.sourceModule.task(_).source)
+      filteredLinks = null
 
-      //Retrieve Instance Specifications from Link Specification
-      val instanceSpecs = InstanceSpecification.retrieve(linkSpec)
-
-      def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold).map(_ % blockCount)
-
-      //Load instances into cache
-      val loadTask = new LoadTask(sources, caches, instanceSpecs, if(blockCount > 0) Some(blockingFunction _) else None)
+      //Load instances
       loadTask.runInBackground()
 
       //Execute matching
-      executeSubTask(matchTask)
+      executeSubTask(matchTask, 0.95)
+
+      //Filter links
+      val filterTask = new FilterTask(matchTask.links, linkSpec.filter)
+      filteredLinks = executeSubTask(filterTask)
+    }
+
+    override def stopExecution()
+    {
+      loadTask.cancel()
+      matchTask.cancel()
     }
   }
 }

@@ -1,4 +1,3 @@
-var max_paths = 10;
 var aggregatecounter = 0;
 var transformcounter = 0;
 var comparecounter = 0;
@@ -20,9 +19,6 @@ var sourceDataSetVar = "";
 var targetDataSetVar = "";
 var sourceDataSetRestriction = "";
 var targetDataSetRestriction = "";
-
-// TODO: not needed?
-// jsPlumb.draggable($(".droppable"));
 
 var endpointOptions =
 {
@@ -103,15 +99,28 @@ document.onselectstart = function ()
   return false;
 };
 
+Array.max = function(array) {
+    return Math.max.apply(Math, array);
+};
+
 function findLongestPath(xml)
 {
-  length = 1;
-  $(xml).children().each(function ()
+  if ($(xml).children().length > 0)
   {
-    length = findLongestPath($(this)) + 1;
-
-  });
-  return length;
+    var xmlHeight = [];
+    var i = 0;
+    $(xml).children().each(function()
+    {
+      xmlHeight[i] = findLongestPath($(this));
+      i = i+1;
+    });
+    maxLength = Math.max.apply(null, xmlHeight);
+    return 1 + maxLength;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 function getHelpIcon(description, marginTop) {
@@ -136,16 +145,17 @@ function getDeleteIcon(elementId) {
   return img;
 }
 
-function parseXML(xml, level, level_y, last_element, max_level)
+function parseXML(xml, level, level_y, last_element, max_level, lastElementId)
 {
   $(xml).find("> Aggregate").each(function ()
   {
     var box1 = $(document.createElement('div'));
     box1.addClass('dragDiv aggregateDiv');
     box1.attr("id", "aggregate_" + aggregatecounter);
-    var height = aggregatecounter * 120 + 150;
-    var left = (max_level*250) - ((level + 1) * 250) + 300;
-    box1.attr("style", "left: " + left + "px; top: " + height + "px;");
+
+    var height = aggregatecounter * 120 + 120;
+    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
 
     var number = "#aggregate_" + aggregatecounter;
     box1.draggable(
@@ -245,7 +255,7 @@ function parseXML(xml, level, level_y, last_element, max_level)
         targetEndpoint: last_element
       });
     }
-    parseXML($(this), level + 1, 0, endp_left, max_level);
+    parseXML($(this), level + 1, 0, endp_left, max_level, box1.attr("id"));
 
   });
   $(xml).find("> Compare").each(function ()
@@ -253,9 +263,11 @@ function parseXML(xml, level, level_y, last_element, max_level)
     var box1 = $(document.createElement('div'));
     box1.addClass('dragDiv compareDiv');
     box1.attr("id", "compare_" + comparecounter);
-    var height = comparecounter * 120 + 150;
-    var left = (max_level*250) - ((level + 1) * 250) + 300;
-    box1.attr("style", "left: " + left + "px; top: " + height + "px;");
+
+    var height = comparecounter * 120 + 120;
+    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
+
     var number = "#compare_" + comparecounter;
     box1.draggable(
     {
@@ -354,7 +366,7 @@ function parseXML(xml, level, level_y, last_element, max_level)
         targetEndpoint: last_element
       });
     }
-    parseXML($(this), level + 1, 0, endp_left, max_level);
+    parseXML($(this), level + 1, 0, endp_left, max_level, box1.attr("id"));
   });
 
   $(xml).find("> TransformInput").each(function ()
@@ -363,9 +375,9 @@ function parseXML(xml, level, level_y, last_element, max_level)
     box1.addClass('dragDiv transformDiv');
     box1.attr("id", "transform_" + transformcounter);
 
-    var height = transformcounter * 120 + 150;
-    var left = (max_level*250) - ((level + 1) * 250) + 300;
-    box1.attr("style", "left: " + left + "px; top: " + height + "px;");
+    var height = transformcounter * 120 + 120;
+    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
 
     var number = "#transform_" + transformcounter;
     box1.draggable(
@@ -442,7 +454,7 @@ function parseXML(xml, level, level_y, last_element, max_level)
         targetEndpoint: last_element
       });
     }
-    parseXML($(this), level + 1, 0, endp_left, max_level);
+    parseXML($(this), level + 1, 0, endp_left, max_level, box1.attr("id"));
   });
   $(xml).find("> Input").each(function ()
   {
@@ -451,9 +463,9 @@ function parseXML(xml, level, level_y, last_element, max_level)
     box1.addClass('dragDiv sourcePath');
     box1.attr("id", "source_" + sourcecounter);
 
-    var height = sourcecounter * 120 + 150;
-    var left = (max_level*250) - ((level + 1) * 250) + 300;
-    box1.attr("style", "left: " + left + "px; top: " + height + "px;");
+    var height = sourcecounter * 120 + 120;
+    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
 
     var number = "#source_" + sourcecounter;
     box1.draggable(
@@ -508,7 +520,7 @@ function parseXML(xml, level, level_y, last_element, max_level)
         targetEndpoint: last_element
       });
     }
-    parseXML($(this), level + 1, 0, endp_right, max_level);
+    parseXML($(this), level + 1, 0, endp_right, max_level, box1.attr("id"));
   });
 }
 
@@ -540,6 +552,7 @@ function load()
   {
     var max_level = findLongestPath($(this));
 
+    /*
     var userAgent = navigator.userAgent.toLowerCase();
     // Figure out what browser is being used
     jQuery.browser = {
@@ -552,11 +565,12 @@ function load()
     };
     var is_chrome = /chrome/.test( navigator.userAgent.toLowerCase());
     var is_safari = /safari/.test( navigator.userAgent.toLowerCase());
-    if (is_chrome || is_safari) {
-      max_level = max_level - 1;
-    }
+    */
 
-    parseXML($(this), 0, 0, "", max_level);
+    parseXML($(this), 0, 0, "", max_level, "");
+    if ((sourcecounter*120 + 20) > 800) {
+       $("#droppable").css( { "height": (sourcecounter*120 + 20) + "px" });
+    }
   });
   $(linkSpec).find("> LinkType").each(function ()
   {
@@ -564,11 +578,25 @@ function load()
   });
   $(linkSpec).find("> Filter").each(function ()
   {
-    $("#linklimit").attr("value", $(this).attr("limit"));
+    if ($(this).attr("limit") > 0) {
+      $("select[id=linklimit] option[text="+$(this).attr("limit")+"]").attr("selected", true);
+    }
     $("#threshold").attr("value", $(this).attr("threshold"));
   });
+  updateWindowWidth();
 }
 
+
+function updateWindowWidth() {
+  var window_width =  $(window).width();
+  if (window_width>1100) {
+    $(".wrapper").width(window_width-10);
+    $("#droppable").width(window_width-290);
+  } else {
+    $(".wrapper").width(1000+1200-window_width);
+    $("#droppable").width(830);
+  }
+}
 
 function getHTML(who, deep)
 {
@@ -700,9 +728,9 @@ function serializeLinkSpec() {
   xml.appendChild(linkcondition);
 
   var filter = document.createElement("Filter");
-  if ($("#linklimit").val().length > 0)
+  if ($("#linklimit :selected").text() != "unlimited")
   {
-    filter.setAttribute("limit", $("#linklimit").val());
+    filter.setAttribute("limit", $("#linklimit :selected").text());
   }
   filter.setAttribute("threshold", $("#threshold").val());
   xml.appendChild(filter);
@@ -719,6 +747,7 @@ function serializeLinkSpec() {
 $(function ()
 {
   $("#droppable").droppable(
+  //{ tolerance: 'touch' },
   {
     drop: function (ev, ui)
     {
@@ -726,6 +755,12 @@ $(function ()
         //$(this).append($(ui.helper).clone());
         $.ui.ddmanager.current.cancelHelperRemoval = true;
         ui.helper.appendTo(this);
+
+        /*
+        styleString = $("#"+ui.helper.attr('id')).attr("style");
+        styleString = styleString.replace("position: absolute", "");
+        $("#"+ui.helper.attr('id')).attr("style", styleString);
+        */
         if (ui.helper.attr('id').search(/aggregate/) != -1)
         {
           jsPlumb.addEndpoint('aggregate_' + aggregatecounter, endpointOptions1);
@@ -768,10 +803,6 @@ $(function ()
             containment: '#droppable'
           });
           sourcecounter = sourcecounter + 1;
-          /*
-          $(number).removeClass("ui-draggable-dragging");
-          $(number).addClass("ui-draggable");
-          */
         }
         if (ui.helper.attr('id').search(/target/) != -1)
         {
@@ -838,7 +869,7 @@ function getPropertyPaths(deleteExisting)
     {
       document.getElementById("paths").removeChild(document.getElementById("loading"));
 
-    var global_id = 0;
+    var list_item_id = 0;
 
     var box = $(document.createElement('div'));
     box.html("<span style='font-weight: bold;'>Source:</span> " + data.source.id).appendTo("#paths");
@@ -851,6 +882,7 @@ function getPropertyPaths(deleteExisting)
 
     var box = $(document.createElement('div'));
     box.attr("id", "sourcepaths");
+    box.addClass("scrollboxes");
     box.appendTo("#paths");
 
     var sourcepaths = data.source.paths;
@@ -858,7 +890,7 @@ function getPropertyPaths(deleteExisting)
     {
       var box = $(document.createElement('div'));
       box.addClass('draggable');
-      box.attr("id", "source" + global_id);
+      box.attr("id", "source" + list_item_id);
       box.attr("title", encodeHtml(item.path));
       box.html("<span></span><p style=\"white-space:nowrap; overflow:hidden;\">" + encodeHtml(item.path) + "</p>");
       box.draggable(
@@ -903,15 +935,13 @@ function getPropertyPaths(deleteExisting)
         }
       });
       box.appendTo("#sourcepaths");
-
-      //jsPlumb.addEndpoint('source'+global_id, endpointOptions);
-      global_id = global_id + 1;
+      list_item_id = list_item_id + 1;
 
     });
 
     var box = $(document.createElement('div'));
     box.addClass('draggable');
-    box.attr("id", "source" + global_id);
+    box.attr("id", "source" + list_item_id);
     box.html("<span> </span><small> </small><p>(custom path)</p>");
     box.draggable(
     {
@@ -954,13 +984,15 @@ function getPropertyPaths(deleteExisting)
     });
     box.appendTo("#sourcepaths");
 
+    /*
     var availablePaths = data.source.availablePaths;
     if (max_paths < availablePaths)
     {
-      //var box = $(document.createElement('div'));
-      //box.html("<a href='/linkSpec' class='more'>&darr; more source paths...</a>");
-      //box.appendTo("#paths");
+      var box = $(document.createElement('div'));
+      box.html("<a href='/linkSpec' class='more'>&darr; more source paths...</a>");
+      box.appendTo("#paths");
     }
+    */
 
     var box = $(document.createElement('div'));
     box.html("<span style='font-weight: bold;'>Target:</span> " + data.target.id).appendTo("#paths");
@@ -971,10 +1003,11 @@ function getPropertyPaths(deleteExisting)
     box.html("<span style='font-weight: bold;'>Restriction:</span> " + data.target.restrictions).appendTo("#paths");
     box.appendTo("#paths");
 
-    var global_id = 0;
+    var list_item_id = 0;
 
     var box = $(document.createElement('div'));
     box.attr("id", "targetpaths");
+    box.addClass("scrollboxes");
     box.appendTo("#paths");
 
     var sourcepaths = data.target.paths;
@@ -982,7 +1015,7 @@ function getPropertyPaths(deleteExisting)
     {
       var box = $(document.createElement('div'));
       box.addClass('draggable');
-      box.attr("id", "target" + global_id);
+      box.attr("id", "target" + list_item_id);
       box.attr("title", encodeHtml(item.path));
       box.html("<span></span><small>" + encodeHtml(item.path) + "</small><p style=\"white-space:nowrap; overflow:hidden;\">" + encodeHtml(item.path) + "</p>");
       box.draggable(
@@ -1028,13 +1061,13 @@ function getPropertyPaths(deleteExisting)
       });
       box.appendTo("#targetpaths");
 
-      global_id = global_id + 1;
+      list_item_id = list_item_id + 1;
 
     });
 
     var box = $(document.createElement('div'));
     box.addClass('draggable');
-    box.attr("id", "target" + global_id);
+    box.attr("id", "target" + list_item_id);
     box.html("<span> </span><small> </small><p>(custom path)</p>");
     box.draggable(
     {
@@ -1105,11 +1138,17 @@ function getOperators()
       // alert("success: " + data + " " + textStatus + " " + XMLHttpRequest.status);
       if (XMLHttpRequest.status >= 200 && XMLHttpRequest.status < 300)
       {
-        var global_id = 0;
+        var list_item_id = 0;
 
         var box = $(document.createElement('div'));
-        box.attr("style", "color: #0cc481; font-weight: bold;");
+        box.attr("style", "color: #0cc481;");
+        box.addClass("boxheaders");
         box.html("Transformations").appendTo("#operators");
+        box.appendTo("#operators");
+
+        var box = $(document.createElement('div'));
+        box.attr("id", "transformationbox");
+        box.addClass("scrollboxes");
         box.appendTo("#operators");
 
         var sourcepaths = data.transformations;
@@ -1122,7 +1161,7 @@ function getOperators()
 
           var box = $(document.createElement('div'));
           box.addClass('draggable tranformations');
-          box.attr("id", "transformation" + global_id);
+          box.attr("id", "transformation" + list_item_id);
           box.attr("title", item.description);
           box.html("<span></span><small>" + item.label + "</small><p>" + item.label + "</p>");
           box.draggable(
@@ -1185,20 +1224,22 @@ function getOperators()
               return box1;
             }
           });
-          box.appendTo("#operators");
+          box.appendTo("#transformationbox");
 
-          // jsPlumb.addEndpoint('transformation'+global_id, endpointOptions1);
-          // jsPlumb.addEndpoint('transformation'+global_id, endpointOptions2);
-          global_id = global_id + 1;
-
-
+          list_item_id = list_item_id + 1;
         });
 
-        var global_id = 0;
+        var list_item_id = 0;
 
         var box = $(document.createElement('div'));
-        box.attr("style", "color: #e59829; font-weight: bold;");
+        box.attr("style", "color: #e59829;");
+        box.addClass("boxheaders");
         box.html("Comparators").appendTo("#operators");
+        box.appendTo("#operators");
+
+        var box = $(document.createElement('div'));
+        box.attr("id", "comparatorbox");
+        box.addClass("scrollboxes");
         box.appendTo("#operators");
 
         var sourcepaths = data.comparators;
@@ -1210,7 +1251,7 @@ function getOperators()
           comparators[item.id]["parameters"] = item.parameters;
           var box = $(document.createElement('div'));
           box.addClass('draggable comparators');
-          box.attr("id", "comparator" + global_id);
+          box.attr("id", "comparator" + list_item_id);
           box.attr("title", item.description);
           box.html("<span></span><small>" + item.label + "</small><p>" + item.label + "</p>");
           box.draggable(
@@ -1293,17 +1334,21 @@ function getOperators()
               return box1;
             }
           });
-          box.appendTo("#operators");
-          // jsPlumb.addEndpoint('comparator'+global_id, endpointOptions1);
-          // jsPlumb.addEndpoint('comparator'+global_id, endpointOptions2);
-          global_id = global_id + 1;
+          box.appendTo("#comparatorbox");
+          list_item_id = list_item_id + 1;
         });
 
-        var global_id = 0;
+        var list_item_id = 0;
 
         var box = $(document.createElement('div'));
-        box.attr("style", "color: #1484d4; font-weight: bold;");
+        box.attr("style", "color: #1484d4;");
+        box.addClass("boxheaders");
         box.html("Aggregators").appendTo("#operators");
+        box.appendTo("#operators");
+
+        var box = $(document.createElement('div'));
+        box.attr("id", "aggregatorbox");
+        box.addClass("scrollboxes");
         box.appendTo("#operators");
 
         var sourcepaths = data.aggregators;
@@ -1317,7 +1362,7 @@ function getOperators()
           var box = $(document.createElement('div'));
           box.addClass('draggable aggregators');
           box.attr("title", item.description);
-          box.attr("id", "aggregator" + global_id);
+          box.attr("id", "aggregator" + list_item_id);
           box.html("<span></span><small>" + item.label + "</small><p>" + item.label + "</p>");
 
           box.draggable(
@@ -1400,9 +1445,9 @@ function getOperators()
             }
 
           });
-          box.appendTo("#operators");
+          box.appendTo("#aggregatorbox");
 		  
-          global_id = global_id + 1;
+          list_item_id = list_item_id + 1;
         });
         load();
       }

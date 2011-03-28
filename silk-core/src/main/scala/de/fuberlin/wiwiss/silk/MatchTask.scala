@@ -27,6 +27,8 @@ class MatchTask(linkSpec : LinkSpecification,
   /* Enable indexing if blocking is enabled */
   private val indexingEnabled = caches.source.blockCount > 1 || caches.target.blockCount > 1
 
+  @volatile private var cancelled = false
+
   def links : Buffer[Link] with SynchronizedBuffer[Link] = linkBuffer
 
   /**
@@ -36,6 +38,11 @@ class MatchTask(linkSpec : LinkSpecification,
   {
     require(caches.source.blockCount == caches.target.blockCount, "sourceCache.blockCount == targetCache.blockCount")
 
+    //Reset properties
+    linkBuffer.clear()
+    cancelled = false
+
+    //Create execution service for the matching tasks
     val startTime = System.currentTimeMillis()
     val executorService = Executors.newFixedThreadPool(numThreads)
     val executor = new ExecutorCompletionService[Traversable[Link]](executorService)
@@ -43,11 +50,10 @@ class MatchTask(linkSpec : LinkSpecification,
     //Start matching thread scheduler
     val scheduler = new SchedulerThread(executor)
     scheduler.start()
-    updateStatus("Loading", 0.0)
 
     //Process finished tasks
     var finishedTasks = 0
-    while(scheduler.isAlive || finishedTasks < scheduler.taskCount)
+    while(!cancelled && (scheduler.isAlive || finishedTasks < scheduler.taskCount))
     {
       val result = executor.poll(100, TimeUnit.MILLISECONDS)
       if(result != null)
@@ -63,10 +69,37 @@ class MatchTask(linkSpec : LinkSpecification,
       }
     }
 
-    executorService.shutdown()
-    logger.info("Executed matching in " + ((System.currentTimeMillis - startTime) / 1000.0) + " seconds")
+    //Shutdown
+    if(scheduler.isAlive())
+    {
+      scheduler.interrupt()
+    }
+    if(cancelled)
+    {
+      executorService.shutdownNow()
+    }
+    else
+    {
+      executorService.shutdown()
+    }
+
+    //Log result
+    val time = ((System.currentTimeMillis - startTime) / 1000.0) + " seconds"
+    if(cancelled)
+    {
+      logger.info("Matching cancelled after " + time)
+    }
+    else
+    {
+      logger.info("Executed matching in " +  time)
+    }
 
     linkBuffer
+  }
+
+  override def stopExecution()
+  {
+    cancelled = true
   }
 
   /**
@@ -81,20 +114,27 @@ class MatchTask(linkSpec : LinkSpecification,
 
     override def run()
     {
-      while(true)
+      try
       {
-        val sourceLoaded = !caches.source.isWriting
-        val targetLoaded = !caches.target.isWriting
-
-        updateSourcePartitions(sourceLoaded)
-        updateTargetPartitions(targetLoaded)
-
-        if(sourceLoaded && targetLoaded)
+        while(true)
         {
-          return
-        }
+          val sourceLoaded = !caches.source.isWriting
+          val targetLoaded = !caches.target.isWriting
 
-        Thread.sleep(1000)
+          updateSourcePartitions(sourceLoaded)
+          updateTargetPartitions(targetLoaded)
+
+          if(sourceLoaded && targetLoaded)
+          {
+            return
+          }
+
+          Thread.sleep(1000)
+        }
+      }
+      catch
+      {
+        case ex : InterruptedException =>
       }
     }
 
