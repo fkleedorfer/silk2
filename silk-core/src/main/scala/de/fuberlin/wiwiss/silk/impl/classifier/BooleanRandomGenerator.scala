@@ -32,7 +32,11 @@ class BooleanRandomGenerator(trueProbability:Double, blocks: Int) extends Random
 
   override val blockCounts : Seq[Int] =
   {
-    Seq(blocks)
+    if (blocks < 1){
+      Seq(1)
+    } else {
+      Seq(blocks)
+    }
   }
 
 }
