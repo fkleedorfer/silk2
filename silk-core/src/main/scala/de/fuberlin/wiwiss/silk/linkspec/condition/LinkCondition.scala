@@ -49,7 +49,12 @@ case class LinkCondition(rootOperator : Option[Operator])
         //Convert the index vectors to scalars
         for(index <- indexes) yield
         {
-          (index zip operator.blockCounts).foldLeft(0){case (iLeft, (iRight, blocks)) => iLeft * blocks + iRight}
+          (index zip operator.blockCounts).foldLeft(0){case (iLeft, (iRight, blocks)) => {
+              var blocksToUse = blocks
+              if (blocksToUse == 0) blocksToUse=1;
+              iLeft * blocksToUse + iRight
+            }
+          }
         }
       }
       case None => Set.empty
