@@ -35,6 +35,8 @@ trait Feature
 
   val required: Boolean
 
+  val disableBlocking: Boolean
+
   def apply(instances : SourceTargetPair[Instance], threshold: Double) : Option[FeatureInstance]
 
   def index(instance : Instance, threshold : Double) : Set[Seq[Int]] = Set(Seq(0))
@@ -157,7 +159,7 @@ class MinimumValuesExtractor() extends Extractor
  * Extracts a feature iff both inputs contain at least one identity. The value of the feature is the
  * value contained in both sources. If there are more such values, one is chosen at random.
  */
-case class ExtractorFeature(featureName: String, dataType: String, required: Boolean, params: Map[String, String], inputs : SourceTargetPair[Input], extractor: Extractor) extends Feature
+case class ExtractorFeature(featureName: String, dataType: String, required: Boolean, disableBlocking: Boolean = false, params: Map[String, String], inputs : SourceTargetPair[Input], extractor: Extractor) extends Feature
 {
   private val logger = Logger.getLogger(classOf[ExtractorFeature].getName)
 
@@ -175,21 +177,31 @@ case class ExtractorFeature(featureName: String, dataType: String, required: Boo
     }
   }
 
-  override val blockCounts = extractor.blockCounts
+  override val blockCounts = {
+    if (disableBlocking){
+      Seq(1)
+    } else {
+      extractor.blockCounts
+    }
+  }
 
   override def index(instance : Instance, threshold : Double) : Set[Seq[Int]] =
   {
-    val values = inputs.source(SourceTargetPair(instance, instance)) ++ inputs.target(SourceTargetPair(instance, instance))
-    values.flatMap(value => extractor.index(value, threshold)).toSet
+    if (disableBlocking){
+      Set(Seq(0))
+    } else {
+      val values = inputs.source(SourceTargetPair(instance, instance)) ++ inputs.target(SourceTargetPair(instance, instance))
+      values.flatMap(value => extractor.index(value, threshold)).toSet
+    }
   }
 
   override def toString =
   {
-    "ExtractorFeature(type=extractor, required=" + required + ", datatype=" + dataType + ", inputs=" + inputs + ")"
+    "ExtractorFeature(type=extractor, required=" + required + ", datatype=" + dataType + ", inputs=" + inputs + ", disableBlocking=" + disableBlocking +")"
   }
 }
 
-case class OperatorFeature(featureName: String, dataType: String, required: Boolean, params: Map[String, String], operator: Operator ) extends Feature
+case class OperatorFeature(featureName: String, dataType: String, required: Boolean, disableBlocking: Boolean = false, params: Map[String, String], operator: Operator ) extends Feature
 {
   private val logger = Logger.getLogger(classOf[OperatorFeature].getName)
 
@@ -217,14 +229,24 @@ case class OperatorFeature(featureName: String, dataType: String, required: Bool
 
   override def index(instance : Instance, threshold : Double) : Set[Seq[Int]] =
   {
-    operator.index(instance, threshold)
+    if (disableBlocking) {
+      Set(Seq(0))
+    } else {
+      operator.index(instance, threshold)
+    }
   }
 
-  override val blockCounts = operator.blockCounts
+  override val blockCounts = {
+    if (disableBlocking){
+      Seq(1)
+    } else {
+      operator.blockCounts
+    }
+  }
 
   override def toString =
   {
-    "OperatorFeature(type=operator, required=" + required + ", operator=" + operator + ")"
+    "OperatorFeature(type=operator, required=" + required + ", disableBlocking=" + disableBlocking + ", operator=" + operator + ")"
   }
 }
 
