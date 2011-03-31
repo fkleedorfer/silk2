@@ -169,6 +169,7 @@ object LinkSpecification
   private def readOperatorFeature(node : Node, prefixes : Map[String, String]) : OperatorFeature =
   {
     val requiredStr = node \ "@required" text
+    val disableBlockingStr = node \ "@disableBlocking" text
     val nameStr = node \ "@featureName" text
     val datatypeStr:String = node \ "@dataType" text
     val operators = readOperators(node.child,prefixes)
@@ -177,6 +178,7 @@ object LinkSpecification
       nameStr,
       if (datatypeStr.isEmpty) "numeric" else datatypeStr,
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
+      if (disableBlockingStr.isEmpty) false else disableBlockingStr.toBoolean,
       readParams(node),
       operators.head)
   }
@@ -184,6 +186,7 @@ object LinkSpecification
   private def readExtractorFeature(node : Node, prefixes : Map[String, String]) : ExtractorFeature =
   {
     val requiredStr = node \ "@required" text
+    val disableBlockingStr = node \ "@disableBlocking" text
     val nameStr = node \ "@featureName" text
     val datatypeStr:String = node \ "@dataType" text
     val inputs = readInputs(
@@ -194,6 +197,7 @@ object LinkSpecification
       nameStr,
       if (datatypeStr.isEmpty) "numeric" else datatypeStr,
       if (requiredStr.isEmpty) false else requiredStr.toBoolean,
+      if (disableBlockingStr.isEmpty) false else disableBlockingStr.toBoolean,
       readParams(node), SourceTargetPair(inputs(0),inputs(1)),
       extractor
     )
