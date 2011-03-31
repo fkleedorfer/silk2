@@ -3,22 +3,25 @@ package de.fuberlin.wiwiss.silk.instance
 import java.io._
 import de.fuberlin.wiwiss.silk.util.FileUtils._
 import java.util.logging.Logger
+import collection.mutable.HashMap
+
 
 /**
  * An instance cache, which caches the instances on the local file system.
  */
-class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearOnLoading : Boolean = false, override val blockCount : Int = 1, maxPartitionSize : Int = 1000) extends InstanceCache
+class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearOnLoading : Boolean = false, maxPartitionSize : Int = 1000) extends InstanceCache
 {
-  require(blockCount >= 0, "blockCount must be greater than 0 (blockCount=" + blockCount + ")")
+  //with new blocking, no block count is specified
+  //require(blockCount >= 0, "blockCount must be greater than 0 (blockCount=" + blockCount + ")")
   require(maxPartitionSize >= 0, "maxPartitionSize must be greater than 0 (maxPartitionSize=" + maxPartitionSize + ")")
 
   private val logger = Logger.getLogger(getClass.getName)
 
-  private val blocks = (for(i <- 0 until blockCount) yield new Block(i)).toArray
+  private val blocks = new HashMap[BigInt,Block]()
 
   @volatile private var writing = false
 
-  override def write(instances : Traversable[Instance], blockingFunction : Option[Instance => Set[Int]] = None)
+  override def write(instances : Traversable[Instance], blockingFunction : Option[Instance => Set[BigInt]] = None)
   {
     val startTime = System.currentTimeMillis()
     writing = true
@@ -28,12 +31,15 @@ class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearO
     {
       for(instance <- instances)
       {
-        val blockIndexes = blockingFunction.map(f => f(instance)).getOrElse(Set(0))
-        for(block <- blockIndexes)
+        val blockIndexes:Set[BigInt] = blockingFunction.map(f => f(instance):Set[BigInt]).getOrElse(Set(0))
+        for(blockIndex:BigInt <- blockIndexes)
         {
-          if(block < 0 || block >= blockCount) throw new IllegalArgumentException("Invalid blocking function. (Allocated Block: " + block + ")")
+          //if(block < 0 || block >= blockCount) throw new IllegalArgumentException("Invalid blocking function. (Allocated Block: " + block + ")")
+          if (!blocks.contains(blockIndex)){
+            blocks.updated(blockIndex, new Block(blockIndex))
+          }
 
-          blocks(block).write(instance)
+          blocks(blockIndex).write(instance)
         }
 
         if(!blockIndexes.isEmpty) instanceCount += 1
@@ -50,24 +56,31 @@ class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearO
 
   override def isWriting = writing
 
-  override def read(block : Int, partition : Int) =
+  override def read(block : BigInt, partition : Int) =
   {
-    require(block >= 0 && block < blockCount, "0 <= block < " + blockCount + " (block = " + block + ")")
-    require(partition >= 0 && partition < blocks(block).partitionCount, "0 <= partition < " + blocks(block).partitionCount + " (partition = " + partition + ")")
+    //require(block >= 0 && block < blockCount, "0 <= block < " + blockCount + " (block = " + block + ")")
+    require(blocks.contains(block))
+    val currentBlock = blocks(block)
+    require(partition >= 0 && partition < currentBlock.partitionCount, "0 <= partition < " + currentBlock.partitionCount + " (partition = " + partition + ")")
 
-    blocks(block).read(partition)
+    currentBlock.read(partition)
   }
 
-  override def partitionCount(block : Int) =
+  override def blockIndices():Seq[BigInt] = {
+    blocks.keys.toSeq
+  }
+
+  override def partitionCount(block : BigInt) =
   {
-    require(block >= 0 && block < blockCount, "0 <= block < " + blockCount + " (block = " + block + ")")
+    require(blocks.contains(block))
+    //require(block >= 0 && block < blockCount, "0 <= block < " + blockCount + " (block = " + block + ")")
 
     blocks(block).partitionCount
   }
 
   override def clear()
   {
-    for(block <- blocks)
+    for(block <- blocks.values)
     {
       block.clear()
     }
@@ -75,13 +88,13 @@ class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearO
 
   override def close()
   {
-    for(block <- blocks)
+    for(block <- blocks.values)
     {
       block.close()
     }
   }
 
-  private class Block(block : Int)
+  private class Block(block : BigInt)
   {
     @volatile var partitionCount = 0
 

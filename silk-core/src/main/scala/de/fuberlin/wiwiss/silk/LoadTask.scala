@@ -12,7 +12,7 @@ import java.util.logging.{Level, Logger}
 class LoadTask(sources : SourceTargetPair[Source],
                caches : SourceTargetPair[InstanceCache],
                instanceSpecs : SourceTargetPair[InstanceSpecification],
-               blockingFunction : Option[Instance => Set[Int]] = None) extends Task[Unit]
+               blockingFunction : Option[Instance => Set[BigInt]] = None) extends Task[Unit]
 {
   taskName = "Loading"
 

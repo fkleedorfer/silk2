@@ -5,10 +5,11 @@ import linkspec.LinkSpecification
 import java.util.logging.{Level, Logger}
 import output.Link
 import java.util.concurrent._
-import collection.mutable.{SynchronizedBuffer, Buffer, ArrayBuffer}
-import collection.immutable.HashSet
 import util.{SourceTargetPair, Task}
 import scala.math.max
+import java.util.SortedMap
+import collection.mutable.{SynchronizedBuffer, Buffer, ArrayBuffer}
+import collection.immutable.{HashMap, HashSet}
 
 /**
  * Executes the matching.
@@ -36,7 +37,8 @@ class MatchTask(linkSpec : LinkSpecification,
    */
   override def execute() : Buffer[Link] =
   {
-    require(caches.source.blockCount == caches.target.blockCount, "sourceCache.blockCount == targetCache.blockCount")
+    //block counts can differ, only blocks with identical indices are used
+    //require(caches.source.blockCount == caches.target.blockCount, "sourceCache.blockCount == targetCache.blockCount")
 
     //Reset properties
     linkBuffer.clear()
@@ -110,8 +112,8 @@ class MatchTask(linkSpec : LinkSpecification,
   {
     @volatile var taskCount = 0
 
-    private var sourcePartitions = new Array[Int](caches.source.blockCount)
-    private var targetPartitions = new Array[Int](caches.target.blockCount)
+    private var sourcePartitions:Map[BigInt,Int] = new HashMap[BigInt,Int]()
+    private var targetPartitions:Map[BigInt,Int] = new HashMap[BigInt,Int]()
 
     override def run()
     {
@@ -143,20 +145,22 @@ class MatchTask(linkSpec : LinkSpecification,
     {
       val newSourcePartitions =
       {
-        for(block <- 0 until caches.source.blockCount) yield
+        for(block <- caches.source.blockIndices) yield
         {
-          if(includeLastPartitions)
+          ( block,
+            if(includeLastPartitions)
           {
             caches.source.partitionCount(block)
           }
           else
           {
             max(0, caches.source.partitionCount(block) - 1)
-          }
+          })
         }
-      }.toArray
+      }.toMap
 
-      for(block <- 0 until caches.source.blockCount;
+      //walk over block indices (non-continuous list of BigInt)
+      for(block <- caches.source.blockIndices;
           sourcePartition <- sourcePartitions(block) until newSourcePartitions(block);
           targetPartition <- 0 until targetPartitions(block))
       {
@@ -170,8 +174,9 @@ class MatchTask(linkSpec : LinkSpecification,
     {
       val newTargetPartitions =
       {
-        for(block <- 0 until caches.target.blockCount) yield
+        for(block <- caches.source.blockIndices) yield
         {
+          (block,
           if(includeLastPartitions)
           {
             caches.target.partitionCount(block)
@@ -179,11 +184,11 @@ class MatchTask(linkSpec : LinkSpecification,
           else
           {
             max(0, caches.target.partitionCount(block) - 1)
-          }
+          })
         }
-      }.toArray
+      }.toMap
 
-      for(block <- 0 until caches.target.blockCount;
+      for(block <- caches.source.blockIndices;
           targetPartition <- targetPartitions(block) until newTargetPartitions(block);
           sourcePartition <- 0 until sourcePartitions(block))
       {
@@ -193,7 +198,7 @@ class MatchTask(linkSpec : LinkSpecification,
       targetPartitions = newTargetPartitions
     }
 
-    private def newMatcher(block : Int, sourcePartition : Int, targetPartition : Int)
+    private def newMatcher(block : BigInt, sourcePartition : Int, targetPartition : Int)
     {
       executor.submit(new Matcher(block, sourcePartition, targetPartition))
       taskCount += 1
@@ -203,7 +208,7 @@ class MatchTask(linkSpec : LinkSpecification,
   /**
    * Matches the instances of two partitions.
    */
-  private class Matcher(blockIndex : Int, sourcePartitionIndex : Int, targetPartitionIndex : Int) extends Callable[Traversable[Link]]
+  private class Matcher(blockIndex : BigInt, sourcePartitionIndex : Int, targetPartitionIndex : Int) extends Callable[Traversable[Link]]
   {
     override def call() : Traversable[Link] =
     {

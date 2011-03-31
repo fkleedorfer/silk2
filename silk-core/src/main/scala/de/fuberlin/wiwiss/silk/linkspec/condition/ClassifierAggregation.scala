@@ -36,6 +36,9 @@ case class ClassifierAggregation(required:Boolean, weight: Int, threshold:Double
 
     val indexSets = {
       for (op <- features) yield {
+        if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
+                System.out.println("indexing operator: " + op)
+        }
         val index = op.index(instance, classifier.computeThreshold(threshold, 1.0 / totalWeights))
         val blockCounts = op.blockCounts
 
