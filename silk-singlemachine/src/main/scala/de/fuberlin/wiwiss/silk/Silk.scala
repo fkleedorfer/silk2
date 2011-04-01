@@ -115,8 +115,8 @@ object Silk
 
     //Create instance caches
     val caches = SourceTargetPair(
-        new FileInstanceCache(instanceSpecs.source, new File(instanceCacheDir + "/source/" + linkSpec.id + "/"), reload, config.blocking.map(_.blocks).getOrElse(1)),
-        new FileInstanceCache(instanceSpecs.target, new File(instanceCacheDir + "/target/" + linkSpec.id + "/"), reload, config.blocking.map(_.blocks).getOrElse(1))
+        new FileInstanceCache(instanceSpecs.source, new File(instanceCacheDir + "/source/" + linkSpec.id + "/"), reload),
+        new FileInstanceCache(instanceSpecs.target, new File(instanceCacheDir + "/target/" + linkSpec.id + "/"), reload)
       )
 
     //Load instances into cache
@@ -125,7 +125,7 @@ object Silk
     {
       val sources = linkSpec.datasets.map(_.sourceId).map(config.source(_))
 
-      def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold, config.blocking.map(_.blocks).getOrElse(1))
+      def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold)
       val loadTask = new LoadTask(sources, caches, instanceSpecs, if(config.blocking.isDefined) Some(blockingFunction _) else None)
       loader = loadTask.runInBackground()
     }
