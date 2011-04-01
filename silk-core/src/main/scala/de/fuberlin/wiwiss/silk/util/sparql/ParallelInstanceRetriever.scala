@@ -121,7 +121,8 @@ class ParallelInstanceRetriever(endpoint : SparqlEndpoint, pageSize : Int = 1000
           sparql += SparqlPathBuilder(path :: Nil, "?" + instanceSpec.variable, "?" + varPrefix)
         }
       }
-      sparql += "} order by ?" + instanceSpec.variable
+      //sparql += "} order by ?" + instanceSpec.variable
+      sparql += "} "
       endpoint.query(sparql)
     }
 
