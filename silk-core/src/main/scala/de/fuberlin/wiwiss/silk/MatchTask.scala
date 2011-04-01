@@ -8,8 +8,8 @@ import java.util.concurrent._
 import util.{SourceTargetPair, Task}
 import scala.math.max
 import java.util.SortedMap
-import collection.mutable.{SynchronizedBuffer, Buffer, ArrayBuffer}
-import collection.immutable.{HashMap, HashSet}
+import collection.mutable.{SynchronizedBuffer, Buffer, ArrayBuffer,HashMap}
+import collection.immutable.HashSet
 
 /**
  * Executes the matching.
@@ -112,8 +112,8 @@ class MatchTask(linkSpec : LinkSpecification,
   {
     @volatile var taskCount = 0
 
-    private var sourcePartitions:Map[BigInt,Int] = new HashMap[BigInt,Int]()
-    private var targetPartitions:Map[BigInt,Int] = new HashMap[BigInt,Int]()
+    private var sourcePartitions:HashMap[BigInt,Int] = new HashMap[BigInt,Int]()
+    private var targetPartitions:HashMap[BigInt,Int] = new HashMap[BigInt,Int]()
 
     override def run()
     {
@@ -159,15 +159,18 @@ class MatchTask(linkSpec : LinkSpecification,
         }
       }.toMap
 
+      //create new matchers for new partitions
       //walk over block indices (non-continuous list of BigInt)
       for(block <- caches.source.blockIndices;
-          sourcePartition <- sourcePartitions(block) until newSourcePartitions(block);
-          targetPartition <- 0 until targetPartitions(block))
+          sourcePartition <- (if (sourcePartitions.contains(block)) sourcePartitions(block) else 0) until newSourcePartitions(block);
+          targetPartition <- 0 until (if (targetPartitions.contains(block)) targetPartitions(block) else 0))
       {
         newMatcher(block, sourcePartition, targetPartition)
       }
-
-      sourcePartitions = newSourcePartitions
+      for ( (key, value) <- newSourcePartitions)
+      {
+        sourcePartitions.put(key,value)
+      }
     }
 
     private def updateTargetPartitions(includeLastPartitions : Boolean)
@@ -189,13 +192,16 @@ class MatchTask(linkSpec : LinkSpecification,
       }.toMap
 
       for(block <- caches.source.blockIndices;
-          targetPartition <- targetPartitions(block) until newTargetPartitions(block);
-          sourcePartition <- 0 until sourcePartitions(block))
+          targetPartition <- (if (targetPartitions.contains(block)) targetPartitions(block) else 0) until newTargetPartitions(block);
+          sourcePartition <- 0 until (if (sourcePartitions.contains(block)) sourcePartitions(block) else 0))
       {
         newMatcher(block, sourcePartition, targetPartition)
       }
 
-      targetPartitions = newTargetPartitions
+      for ( (key, value) <- newTargetPartitions)
+      {
+        targetPartitions.put(key,value)
+      }
     }
 
     private def newMatcher(block : BigInt, sourcePartition : Int, targetPartition : Int)
@@ -246,11 +252,11 @@ class MatchTask(linkSpec : LinkSpecification,
       links
     }
 
-    def builtIndex(instances : Array[Instance]) : Array[Set[Int]] =
+    def builtIndex(instances : Array[Instance]) : Array[Set[BigInt]] =
     {
       if(indexingEnabled)
       {
-        instances.map(instance => HashSet(linkSpec.condition.index(instance, linkSpec.filter.threshold, caches.source.blockCount).toSeq : _*))
+        instances.map(instance => HashSet(linkSpec.condition.index(instance, linkSpec.filter.threshold).toSeq : _*))
       }
       else
       {
@@ -258,7 +264,7 @@ class MatchTask(linkSpec : LinkSpecification,
       }
     }
 
-    def compareIndexes(index1 : Set[Int], index2 : Set[Int]) =
+    def compareIndexes(index1 : Set[BigInt], index2 : Set[BigInt]) =
     {
       index1.exists(index2.contains(_))
     }

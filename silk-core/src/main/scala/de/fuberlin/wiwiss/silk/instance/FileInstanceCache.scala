@@ -3,8 +3,7 @@ package de.fuberlin.wiwiss.silk.instance
 import java.io._
 import de.fuberlin.wiwiss.silk.util.FileUtils._
 import java.util.logging.Logger
-import collection.mutable.HashMap
-
+import collection.mutable.{SynchronizedMap, HashMap}
 
 /**
  * An instance cache, which caches the instances on the local file system.
@@ -17,7 +16,7 @@ class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearO
 
   private val logger = Logger.getLogger(getClass.getName)
 
-  private val blocks = new HashMap[BigInt,Block]()
+  private var blocks = new HashMap[BigInt,Block]() with SynchronizedMap[BigInt, Block]
 
   @volatile private var writing = false
 
@@ -26,7 +25,7 @@ class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearO
     val startTime = System.currentTimeMillis()
     writing = true
     var instanceCount = 0
-
+    logger.info("writing " + instances.size + " instances...")
     try
     {
       for(instance <- instances)
@@ -34,11 +33,13 @@ class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearO
         val blockIndexes:Set[BigInt] = blockingFunction.map(f => f(instance):Set[BigInt]).getOrElse(Set(0))
         for(blockIndex:BigInt <- blockIndexes)
         {
+          //logger.info("handling loaded instance" + instance.uri )
           //if(block < 0 || block >= blockCount) throw new IllegalArgumentException("Invalid blocking function. (Allocated Block: " + block + ")")
           if (!blocks.contains(blockIndex)){
-            blocks.updated(blockIndex, new Block(blockIndex))
+            //logger.info("block " + blockIndex + " is new, creating...")
+            blocks.put(blockIndex, new Block(blockIndex))
           }
-
+          //logger.info("writing instance" + instance.uri + " to block " + blockIndex)
           blocks(blockIndex).write(instance)
         }
 
@@ -66,16 +67,22 @@ class FileInstanceCache(instanceSpec : InstanceSpecification, dir : File, clearO
     currentBlock.read(partition)
   }
 
+  override def blockCount: Int = {
+    blocks.size
+  }
+
   override def blockIndices():Seq[BigInt] = {
     blocks.keys.toSeq
   }
 
   override def partitionCount(block : BigInt) =
   {
-    require(blocks.contains(block))
+    //require(blocks.contains(block))
     //require(block >= 0 && block < blockCount, "0 <= block < " + blockCount + " (block = " + block + ")")
-
-    blocks(block).partitionCount
+    if (blocks.contains(block))
+      blocks(block).partitionCount
+    else
+      0
   }
 
   override def clear()

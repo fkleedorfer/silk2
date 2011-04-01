@@ -29,7 +29,7 @@ trait InstanceCache
   /**
    *  The number of blocks in this cache.
    */
-  val blockCount : Int
+  def blockCount() : Int
 
   /**
    * The block indices of all blocks.
