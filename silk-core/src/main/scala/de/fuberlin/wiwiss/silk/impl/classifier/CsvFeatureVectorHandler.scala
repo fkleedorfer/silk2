@@ -13,35 +13,17 @@ class CsvFeatureVectorHandler(file: String, classField: String, negativeExampleP
     private val outfile = new File(file)
     private var writer = new PrintWriter(new FileOutputStream(outfile))
     private val random = new Random(System.currentTimeMillis())
-    private var initialized = false;
-    private var classFieldIndex:Int = -1
-    
+
     //TODO: this never gets called
     def closeWriter() = {
         writer.close();
     }
 
-    private def initialize(featureVector: Traversable[Option[FeatureInstance]]) = {
-      if (!CsvFeatureVectorHandler.headerHasBeenPrinted) {
-        CsvFeatureVectorHandler.headerHasBeenPrinted = false
-        writer.println(featureVector.map{
-          case Some(featureInstance) => featureInstance.featureName
-          case _ => "no name"
-        }.mkString(","))
-        writer.flush()
-      }
-      classFieldIndex = featureVector.toList.indexWhere
-        {
-          case None => false
-          case Some(inst:FeatureInstance) => inst.featureName == this.classField
-        }
-      logger.info("class field index = " + classFieldIndex)
-      this.initialized = true
-    }
+
 
     override def handleFeatureVector(featureVector : Traversable[Option[FeatureInstance]]) = {
-        if (!initialized){
-          initialize(featureVector)
+        if (!CsvFeatureVectorHandler.initialized){
+          CsvFeatureVectorHandler.initialize(featureVector,classField,writer)
         }
         //System.out.println("handling feature vector:" + featureVector)
         //logger.info("writing comparison vector to csv file: " + comparisonVector);
@@ -86,11 +68,11 @@ class CsvFeatureVectorHandler(file: String, classField: String, negativeExampleP
     def isPositiveExample(featureVector: Traversable[Option[FeatureInstance]]): Boolean =
     {
 
-      if (this.classFieldIndex == -1) {
+      if (CsvFeatureVectorHandler.classFieldIndex == -1) {
         logger.info("cannot check for positive example: no classField index found")
         false
       } else {
-        val classFieldValue = featureVector.toList(classFieldIndex)
+        val classFieldValue = featureVector.toList(CsvFeatureVectorHandler.classFieldIndex)
         if (classFieldValue.isEmpty || classFieldValue.get.value.isEmpty){
 //          logger.info("negative example: " + featureVector)
           false
@@ -109,6 +91,28 @@ class CsvFeatureVectorHandler(file: String, classField: String, negativeExampleP
 }
 
 object CsvFeatureVectorHandler {
-  private var headerHasBeenPrinted:Boolean = false
 
+  private var classFieldIndex:Int = -1
+  private var initialized:Boolean = false
+  var lock : AnyRef = new Object()
+
+
+  private def initialize(featureVector: Traversable[Option[FeatureInstance]], classField: String, writer: PrintWriter) = {
+    lock.synchronized {
+      if (!initialized) {
+        writer.println(featureVector.map{
+            case Some(featureInstance) => featureInstance.featureName
+            case _ => "no name"
+          }.mkString(","))
+          writer.flush()
+
+        classFieldIndex = featureVector.toList.indexWhere
+          {
+            case None => false
+            case Some(inst:FeatureInstance) => inst.featureName == classField
+          }
+        initialized = true
+      }
+    }
+  }
 }
