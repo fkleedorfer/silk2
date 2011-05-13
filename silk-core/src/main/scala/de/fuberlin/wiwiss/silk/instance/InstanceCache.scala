@@ -20,7 +20,22 @@ trait InstanceCache
   def read(block : BigInt, partition : Int) : Array[Instance]
 
   /**
-   * Removes all instances from this cache.
+   * Reads all instances for the specified uris.
+   */
+  def read(instanceUris:Array[String]): Array[Instance]
+
+  /**
+   * Reads the instance with the specified uri.
+   */
+  def read(instanceUri: String): Instance
+
+  /**
+   * Reads only the instance URIs of the block partition
+   */
+  def readUris(block : BigInt, partition : Int) : Array[String]
+
+  /**
+   *  Removes all instances from this cache.
    */
   def clear()
 
