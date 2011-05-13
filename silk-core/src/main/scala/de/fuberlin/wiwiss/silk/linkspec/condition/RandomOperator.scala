@@ -47,7 +47,7 @@ case class RandomOperator(required: Boolean, weight : Int, threshold: Double, ra
    *
    * @return A set of (multidimensional) indexes. Instances within the threshold will always get the same index.
    */
-  override def index(instance : Instance, threshold : Double) : Set[Seq[Int]] = randomGenerator.index()
+  override def index(instance : Instance, threshold : Double) : Set[Seq[Int]] = randomGenerator.index(instance.uri)
 
   /**
    * The number of blocks in each dimension of the index.
