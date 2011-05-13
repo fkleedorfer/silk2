@@ -22,7 +22,7 @@ import de.fuberlin.wiwiss.silk.util.sparql.{InstanceRetriever, RemoteSparqlEndpo
  */
 @StrategyAnnotation(id = "sparqlEndpoint", label = "SPARQL Endpoint", description = "DataSource which retrieves all instances from a SPARQL endpoint")
 class SparqlDataSource(endpointURI : String, login : String = null, password : String = null,
-                       graph : String = null, pageSize : Int = 1000, instanceList : String = null,
+                       graph : String = null, pageSize : Int = 5000, instanceList : String = null,
                        pauseTime : Int = 0, retryCount : Int = 3, retryPause : Int = 1000) extends DataSource
 {
   private val uri = new URI(endpointURI)
