@@ -25,7 +25,13 @@ object SparqlPathBuilder
    */
   private def buildPath(path : Path, index : Int, vars : Vars) : String =
   {
-    "OPTIONAL {\n" + buildOperators(vars.subject, path.operators, vars).replace(vars.curTempVar, vars.newValueVar(path, index)) + "}\n"
+    //edit: allow variable-only paths (e.g., "?a")
+    var sparqlForOperators = buildOperators(vars.subject, path.operators, vars).replace(vars.curTempVar, vars.newValueVar(path, index))
+    if (sparqlForOperators.trim.length > 0){
+      "OPTIONAL {\n" + sparqlForOperators + "}\n"
+    } else {
+      ""
+    }
   }
 
   /**
