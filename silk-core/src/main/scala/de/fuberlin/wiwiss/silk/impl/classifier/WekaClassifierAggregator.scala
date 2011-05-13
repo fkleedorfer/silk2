@@ -95,7 +95,6 @@ class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: 
               //logger.info("weka classifier: classification result = 0 (" + classifierResult(0)+")")
               Some(math.min(1.0,math.max(0.0,classifierResult(0))))
             } else {
-
               //length is 2
               //logger.info("weka classifier: true attribute index=" + this.classAttributeTrueIndex + ", confidence=" + classifierResult(this.classAttributeTrueIndex))
               if (classifierResult(this.classAttributeTrueIndex) > classifierResult(this.classAttributeFalseIndex)) {
@@ -112,7 +111,8 @@ class WekaClassifierAggregator(classifierFileName: String, arffDatasetFileName: 
       }
     } catch {
       case e: Exception => {
-        logger.severe("cannot classify instance " + featureVector + ", " + e.getMessage)
+        logger.severe("cannot classify instance " + featureVector)
+        e.printStackTrace
         Some(0.0)
       }
     }
