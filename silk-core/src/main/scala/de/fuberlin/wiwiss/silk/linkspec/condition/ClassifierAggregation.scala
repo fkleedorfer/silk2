@@ -5,23 +5,36 @@ import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import java.util.logging.Logger
 import de.fuberlin.wiwiss.silk.linkspec._
 import de.fuberlin.wiwiss.silk.config.Prefixes
+import collection.mutable.{HashMap, SynchronizedMap, Map}
 
 case class ClassifierAggregation(required:Boolean, weight: Int, threshold:Double, features: Traversable[Feature], classifier: ClassifierAggregator) extends Operator with FeatureVectorEmitter
 {
+  val logger = Logger.getLogger(classOf[ClassifierAggregation].getName)
+  private val applyTime:Map[String,Long] = new HashMap[String, Long]() with SynchronizedMap[String, Long]
+  private val indexTime:Map[String,Long] = new HashMap[String, Long]() with SynchronizedMap[String, Long]
+  private var applyCount = 0
+  private var indexCount = 0
+
+
+
   override def apply(instances: SourceTargetPair[Instance], threshold: Double): Option[Double] =
   {
-    val logger = Logger.getLogger(classOf[ClassifierAggregation].getName)
-
+//    applyCount += 1
+//    if (applyCount > 0 && applyCount % 1000000 == 0){
+//      printTimingInfo("comparison", applyCount, applyTime)
+//    }
     val featureVector = {
       for (feature <- features) yield {
         //feature(instances, aggregator.computeThreshold(threshold, feature.weight.toDouble / totalWeights))
-        feature.apply(instances,threshold)
+//        val start = System.nanoTime
+        val result = feature.apply(instances,threshold)
+//        addTimingInfo(applyTime, feature.featureName, System.nanoTime - start)
+        result
       }
     }
     val result = classifier.classify(featureVector)
     if (result.isDefined) {
-      //logger.info("comparisonVector.size=" + comparisonVector.size + ", operators.size=" + operators.size)
-      emitFeatureVector(featureVector)
+      emitFeatureVector(instances, featureVector, result, threshold)
     }
     if (! result.isEmpty && result.get >= this.threshold){
       result
@@ -32,17 +45,20 @@ case class ClassifierAggregation(required:Boolean, weight: Int, threshold:Double
 
   override def index(instance: Instance, threshold: Double): Set[Seq[Int]] =
   {
+//    indexCount += 1
+//    if (indexCount > 0 && indexCount % 5000 == 0){
+//      printTimingInfo("indexing", indexCount, indexTime)
+//    }
     val totalWeights = features.size
 
     val indexSets = {
-      for (op <- features) yield {
-        if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-                System.out.println("indexing operator: " + op)
-        }
-        val index = op.index(instance, classifier.computeThreshold(threshold, 1.0 / totalWeights))
-        val blockCounts = op.blockCounts
+      for (feature <- features) yield {
+//        val start = System.nanoTime
+        val index = feature.index(instance, classifier.computeThreshold(threshold, 1.0 / totalWeights))
+//        addTimingInfo(indexTime, feature.featureName, System.nanoTime - start)
+        val blockCounts = feature.blockCounts
 
-        if (op.required && index.isEmpty) return Set.empty;
+        if (feature.required && index.isEmpty) return Set.empty;
 
         (index, blockCounts)
       }
@@ -64,6 +80,24 @@ case class ClassifierAggregation(required:Boolean, weight: Int, threshold:Double
 
       combined._1
     }
+  }
+
+  private def addTimingInfo(map: Map[String,Long], key:String, millis:Long) =
+  {
+    if (map.contains(key)) {
+      map.put(key, map.get(key).get + millis)
+    } else {
+      map.put(key, millis)
+    }
+  }
+
+  private def printTimingInfo(timingKind:String, count:Int, millis:Map[String, Long])
+  {
+    logger.info(timingKind + " stats: " + count + " calls performed. Time spent per feature: \n " +
+      (for (key <- millis.keys) yield {
+        "feature '" + key + "': " + millis.get(key).get / 1000000 + " millis"
+      }).mkString("\n ")
+    )
   }
 
   override val blockCounts: Seq[Int] = {
