@@ -4,6 +4,7 @@ import java.io.{Reader, BufferedReader, FileReader, File}
 import concurrent.SyncChannel
 import java.util.logging.Logger
 import collection.mutable.MultiMap
+import collection.immutable.{HashMap, Set}
 
 /**
  * <DESCRIPTION>
@@ -28,8 +29,7 @@ import collection.mutable.MultiMap
 class SynchronizingMultiFileIterator[T,R <: Reader] (deserialize: R => Option[T], createReader: File => R, ordering: Ordering[T])
 {
   var iteratingFileDeserializers:Seq[IteratingDeserializer] = Seq.empty
-
-  var nextItems:Seq[Option[T]] = Seq.empty
+  var nextItems = new collection.mutable.HashMap[T, collection.mutable.Set[IteratingDeserializer]]() with MultiMap[T, IteratingDeserializer]
   val channel = new SyncChannel[Option[T]]()
   val innerThread = new InnerThread()
   val monitor = new AnyRef()
@@ -115,7 +115,7 @@ class SynchronizingMultiFileIterator[T,R <: Reader] (deserialize: R => Option[T]
       //go to first item
       if (newDeserializer.hasNext) {
         iteratingFileDeserializers = iteratingFileDeserializers :+ newDeserializer
-        nextItems = nextItems :+ Some(newDeserializer.next)
+        nextItems.addBinding(newDeserializer.next, newDeserializer)
         this.monitor.notify
         logger.info("added deserializer for file: " + file)
       } else {
@@ -152,7 +152,7 @@ class SynchronizingMultiFileIterator[T,R <: Reader] (deserialize: R => Option[T]
 
   private def prepareNext() =
   {
-
+    var loadCount = 0
 
     monitor.synchronized
     {
@@ -167,50 +167,32 @@ class SynchronizingMultiFileIterator[T,R <: Reader] (deserialize: R => Option[T]
         //in both lists
 
         //get the smallest item:
-        nextItem = Some(nextItems.map(_.get).min(ordering))
+        nextItem = Some(nextItems.keys.min(ordering))
 
-        //walk over list, replace each matching item
-        var newDeserializers:Seq[IteratingDeserializer] = Seq.empty
-        var newNextItems: Seq[Option[T]] = Seq.empty
-        var loadCount = 0
-        for (val i <- 0 until nextItems.size)
+        val firstDeserializers = nextItems.get(nextItem.get).get
+        for (deserializer:IteratingDeserializer <- firstDeserializers)
         {
-          var item = nextItems(i)
-          if (item.equals(nextItem))
-          {
-            //if the deserializer is empty, schedule for removal
-            if (iteratingFileDeserializers(i).hasNext)
+          //remove the binding
+          nextItems.removeBinding(nextItem.get, deserializer)
+          if (deserializer.hasNext)
             {
               //fetch the next item
-              var nextItemForPosition = iteratingFileDeserializers(i).next
+              var nextItemForPosition = deserializer.next
               loadCount += 1
               //compare with latest 'nextItem', if they are equal, fetch another one - until EOF or different item
-              while(nextItemForPosition.equals(nextItem) && iteratingFileDeserializers(i).hasNext)
+              while(nextItemForPosition.equals(nextItem.get) && deserializer.hasNext)
               {
-                nextItemForPosition = iteratingFileDeserializers(i).next
+                nextItemForPosition = deserializer.next
                 loadCount += 1
               }
-              if (iteratingFileDeserializers(i).hasNext)
+              if (deserializer.hasNext)
               {
-                newDeserializers = newDeserializers :+ iteratingFileDeserializers(i)
-                newNextItems = newNextItems :+ Some(nextItemForPosition)
-              } else {
-                //logger.info("(i) finished reading from " + iteratingFileDeserializers(i))
+                //we found a different item: add a binding to the nextItems multi map
+                nextItems.addBinding(nextItemForPosition, deserializer)
               }
-            } else {
-              //logger.info("(ii) finished reading from " + iteratingFileDeserializers(i))
             }
-          }
-          else
-          {
-            newDeserializers = newDeserializers :+ iteratingFileDeserializers(i)
-            newNextItems = newNextItems :+ item
-          }
         }
-        nextItems = newNextItems
-        iteratingFileDeserializers = newDeserializers
         this.skippedDuplicatesCount += loadCount - 1
-        //logger.info("loaded " + loadCount + " new items")
       }
     }
   }
@@ -218,7 +200,7 @@ class SynchronizingMultiFileIterator[T,R <: Reader] (deserialize: R => Option[T]
   def printStats() =
   {
      var info = " managing " + iteratingFileDeserializers.size + " files\n"
-     info += " produced " + counter + " items so far \n skipped " + skippedDuplicates + " duplicates \n hasMoreData=" + hasMoreData
+     info += " produced " + counter + " items so far \n skipped  " + skippedDuplicates + " duplicates \n hasMoreData=" + hasMoreData
      for (d <- iteratingFileDeserializers)
      {
        info += ("\n " +d.toString)
