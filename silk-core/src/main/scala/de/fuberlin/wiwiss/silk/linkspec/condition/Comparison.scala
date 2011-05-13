@@ -11,7 +11,7 @@ import de.fuberlin.wiwiss.silk.config.Prefixes
  */
 
 
-case class Comparison(required : Boolean, weight : Int, threshold: Double, inputs : SourceTargetPair[Input], metric : Metric) extends Operator
+case class Comparison(required : Boolean, weight : Int, threshold: Double, inputs : SourceTargetPair[Input], metric : Metric, debugLabel: String = null) extends Operator
 {
   private val logger = Logger.getLogger(classOf[Comparison].getName)
   /**
@@ -25,22 +25,36 @@ case class Comparison(required : Boolean, weight : Int, threshold: Double, input
 
   override def apply(instances : SourceTargetPair[Instance], threshold : Double) : Option[Double] =
   {
+
     val set1 = inputs.source(instances)
     val set2 = inputs.target(instances)
-    
+    var debugStr:String = null
+    if (debugLabel != null){
+      debugStr = ", set1=" + set1 + ", set2=" + set2 + ", inst1=" + instances.source.uri + ", inst2=" + instances.target.uri
+    }
+
 
     if(!set1.isEmpty && !set2.isEmpty)
     {
       val similarities = for (str1 <- set1; str2 <- set2) yield metric.evaluate(str1, str2, threshold)
       val maxSim = similarities.max
       if (maxSim >= this.threshold ){
+        if (debugLabel != null){
+          logger.info(debugLabel + ": value=" + maxSim + debugStr)
+        }
         Some(maxSim)
       } else {
+        if (debugLabel != null){
+          logger.info(debugLabel + ": value=" + maxSim +"(below threshold of " + threshold + ") " + debugStr)
+        }
         None
       }
     }
     else
     {
+      if (debugLabel != null){
+        logger.info(debugLabel + ": value=[no comparison possible]" + debugStr)
+      }
       None
     }
   }
