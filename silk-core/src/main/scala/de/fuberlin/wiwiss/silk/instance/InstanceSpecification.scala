@@ -6,6 +6,7 @@ import input.{TransformInput, PathInput, Input}
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import xml.Node
 import de.fuberlin.wiwiss.silk.config.Prefixes
+import de.fuberlin.wiwiss.silk.output.InputFields
 
 class InstanceSpecification(val variable : String, val restrictions : Restrictions, val paths : Seq[Path])
 {
@@ -75,7 +76,11 @@ object InstanceSpecification
 
   private def collectPaths(variable : String)(operator : Operator) : Set[Path] = operator match
   {
-    case classifierAggregation : ClassifierAggregation => classifierAggregation.features.flatMap(collectPathsFromFeature(variable)).toSet
+    case classifierAggregation : ClassifierAggregation => {
+      (classifierAggregation.features.flatMap(collectPathsFromFeature(variable))
+      ++
+      classifierAggregation.featureVectorHandlers.flatMap(collectPathsFromFeatureVectorHandler(variable))).toSet
+    }
 
     case aggregation : Aggregation => aggregation.operators.flatMap(collectPaths(variable)).toSet
     case comparison : Comparison =>
@@ -103,6 +108,17 @@ object InstanceSpecification
       val targetPaths = collectPathsFromInput(variable)(exfeature.inputs.target)
       (sourcePaths ++ targetPaths).toSet
     }
+  }
+
+  /** added for classification **/
+  private def collectPathsFromFeatureVectorHandler(variable : String)(handler : FeatureVectorHandler) : Set[Path] =
+  {
+    handler.outputRows.flatMap{
+      _.fields.collect{
+        case inputFields:InputFields =>
+            inputFields.inputs.flatMap((input:Input) => ( collectPathsFromInput(variable)(input):Set[Path]))
+      }.flatten
+    }.toSet
   }
 
 }
