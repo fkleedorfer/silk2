@@ -6,7 +6,8 @@ trait RandomGenerator extends Strategy
 {
   def nextValue() : Double
 
-  def index() : Set[Seq[Int]]
+  def index(instanceUri:String) : Set[Seq[Int]]
+
 
   val blockCounts: Seq[Int]
 }
