@@ -1,0 +1,234 @@
+body{
+	font-family:"Trebuchet MS","Arial","Helvetica","Verdana","sans-serif";
+}
+
+#content
+{
+	padding: 20px 10px;
+  /*
+  width: 1100px;
+  */
+}
+
+.container  {
+	border: 1px solid #eee;
+	height:90%;
+	padding:5px;
+  width:auto;
+  min-width: 1090px;
+  max-width:100%;
+	margin: 10px 5px;
+	float: left;
+}
+
+.draggables {
+	float: left;
+}
+
+.wrapper {
+  width: 1100px;
+}
+
+.draggable {
+	width: 200px;
+	height: 13px;
+	padding: 4px;
+	margin: 4px 4px 4px 0;
+	background-color: #f2d7ff;
+	border:1px dotted #582271;
+	text-align: left;
+	cursor:move;
+	font-size: 9pt;
+	z-index:50;
+}
+
+.droppable_outer {
+	min-width: 830px;
+  width: auto;
+  height: 800px;
+	margin: 0 10px;
+	float: left;
+}
+
+#droppable {
+	width: auto;
+  height: 800px;
+	padding: 5px;
+  overflow: scroll;
+  position: relative;
+  background-color: #f8f8f8;
+	border:1px dashed #d9d9d9;
+	margin-bottom: 10px;
+}
+
+._jsPlumb_endpoint { z-index: 2; }
+
+.draggable-inside {
+	width: 200px;
+	height: 13px;
+	padding: 4px;
+	margin: 4px 4px 4px 0;
+	background-color: #d6eeff;
+	border:1px dotted #582271;
+	text-align: left;
+	cursor:move;
+	font-size: 9pt;
+}
+
+.aggregators {
+	background-color: #d6eeff;
+	border:1px dotted #1484d4;
+}
+.tranformations {
+	background-color: #d6fff0;
+	border:1px dotted #0cc481;
+}
+.comparators {
+	background-color: #ffeed6;
+	border:1px dotted #e59829;
+}
+
+.dragDiv {
+	width:200px;
+	position:relative;
+	left:100px;
+	top:100px;
+	font-size: 9pt;
+    z-index: 1;
+}
+
+.dragDiv h5 {
+	font-size: 9pt;
+  cursor: move;
+  padding:5px;
+  margin:1px;
+}
+
+.dragDiv .content {
+  min-height: 14px;
+}
+
+.dragDiv div {
+	padding:3px 5px;
+	margin-bottom:5px;
+
+}
+
+.dragDiv h5 div {
+	padding:0px;
+	margin-bottom:0px;
+}
+
+.sourcePath {
+	background-color:#f2d7ff;
+	border:1px solid #C354BF;
+}
+
+.targetPath {
+	background-color:#f2d7ff;
+	border:1px solid #C354BF;
+}
+
+.transformDiv  {
+	background-color: #d6fff0;
+	border:1px solid #0cc481;
+}
+
+.compareDiv  {
+	background-color: #ffeed6;
+	border:1px solid #e59829;
+}
+
+.aggregateDiv  {
+	background-color: #d6eeff;
+	border:1px solid #1484d4;
+}
+
+.sourcePath h5 {
+	background-color:#C354BF;
+    height: 15px;
+}
+
+.targetPath h5 {
+	background-color:#C354BF;
+    height: 15px;
+}
+
+.transformDiv h5 {
+	background-color:#0cc481;
+    height: 15px;
+}
+
+.compareDiv h5 {
+	background-color:#e59829;
+    height: 15px;
+}
+
+.aggregateDiv h5 {
+	background-color:#1484d4;
+    height: 15px;
+}
+
+.more {
+	font-size: 9pt;
+    width: 230px;
+}
+
+a.more {
+	text-decoration: none;
+}
+
+.dragDiv small, .draggable span, .draggable small{
+	display:none;
+}
+.excerpt{
+	font-size: 10px;
+	background: #db8ffe;
+	border: 1px solid #582271;
+	width: 200px;
+	height: 15px;
+	padding: 5px;
+}
+
+.dragactive{
+	background-color: #ffcccc;
+	border: 1px dashed #e5a8a8;
+}
+
+.drophover{
+	background-color: #d5eca6;
+	border: 1px dotted #c7dd9b;
+}
+
+.drophighlight{
+	background-color: #cae9ec;
+	border: 1px solid #b9d5d8;
+}
+
+.description{
+  font-size:12px;
+  text-align:center;
+}
+
+.scrollboxes
+{
+  width: 230px;
+  height: 98px;
+  overflow: auto;
+}
+
+.boxheaders
+{
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.accepthighlight{
+    background-color: #66ff00;
+    border: 2px solid #009948;
+}
+
+.accepthoverhighlight {
+	background-color: #ffff00;
+  border: 2px solid #f1d21e;
+}
