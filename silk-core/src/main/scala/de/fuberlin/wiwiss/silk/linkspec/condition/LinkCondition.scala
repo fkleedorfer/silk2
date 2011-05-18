@@ -47,10 +47,6 @@ case class LinkCondition(rootOperator : Option[Operator])
         val indexes = operator.index(instance, threshold)
         val bigIndexes = indexes.map(_.map(BigInt(_)))
 
-        if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-          System.out.println("--indices: " + bigIndexes)
-          //System.out.println("--blocks: " + blocks)
-        }
         //Convert the index vectors to scalars
         for(index <- bigIndexes) yield
         {
@@ -58,9 +54,6 @@ case class LinkCondition(rootOperator : Option[Operator])
               var blocksToUse = blocks
               if (blocksToUse == 0) blocksToUse=1;
               val res = iLeft * blocksToUse + iRight
-              if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-                System.out.println("blocks: " + blocks + ", iRight: " + iRight + " intermediate result: " + res)
-              }
               res
             }
           }
@@ -68,20 +61,6 @@ case class LinkCondition(rootOperator : Option[Operator])
       }
       case None => Set.empty
     }
-    if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-      System.out.println("instance indices:" + instanceIndices)
-    }
-//    val blockIndices = for (index <- instanceIndices) yield {
-//      val blockIndex = (index % blocks).toInt
-//      if (blockIndex < 0 ) {
-//        blockIndex + blocks
-//      } else {
-//        blockIndex
-//      }
-//    }
-//    if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-//      System.out.println("block indices: " + blockIndices)
-//    }
     instanceIndices
   }
   /**
