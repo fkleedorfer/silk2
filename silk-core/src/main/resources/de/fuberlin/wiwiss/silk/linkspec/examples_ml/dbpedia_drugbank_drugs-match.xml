@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Silk>
+    <Prefixes>
+        <Prefix id="rdf" namespace="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+        <Prefix id="rdfs" namespace="http://www.w3.org/2000/01/rdf-schema#"/>
+        <Prefix id="owl" namespace="http://www.w3.org/2002/07/owl#"/>
+        <Prefix id="dbpedia-owl" namespace="http://dbpedia.org/ontology/"/>
+        <Prefix id="dbpedia-prop" namespace="http://dbpedia.org/property/"/>
+        <Prefix id="dc" namespace="http://purl.org/dc/terms/"/>
+        <Prefix id="drugbank" namespace="http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/"/>
+    </Prefixes>
+
+    <DataSources>
+        <DataSource id="dbpedia" type="sparqlEndpoint">
+            <Param name="endpointURI" value="http://dbpedia.org/sparql"/>
+            <Param name="graph" value="http://dbpedia.org"/>
+            <Param name="retryCount" value="100"/>
+            <Param name="retryPause" value="1000"/>
+        </DataSource>
+
+        <DataSource id="drugbank" type="sparqlEndpoint">
+            <Param name="endpointURI" value="http://www4.wiwiss.fu-berlin.de/drugbank/sparql"/>
+        </DataSource>
+    </DataSources>
+
+    <!-- Blocking / -->
+
+    <Interlinks>
+        <Interlink id="drugs">
+            <LinkType>owl:sameAs</LinkType>
+
+            <SourceDataset dataSource="dbpedia" var="a">
+                <RestrictTo>
+                    ?a rdf:type dbpedia-owl:Drug
+                </RestrictTo>
+            </SourceDataset>
+
+            <TargetDataset dataSource="drugbank" var="b">
+                <RestrictTo>
+                    ?b rdf:type drugbank:drugs
+                </RestrictTo>
+            </TargetDataset>
+
+            <LinkCondition>
+
+                <Classify>
+
+                    <OperatorFeature featureName="label-sim" dataType="nominal" blockingMode="strict">
+                        <Compare metric="levenshtein">
+                            <TransformInput function="lowerCase">
+                                <Input path="?a/rdfs:label"/>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/rdfs:label"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+
+                    <OperatorFeature featureName="label-synonym-sim" dataType="nominal" blockingMode="strict">
+                        <Compare metric="levenshtein">
+                            <TransformInput function="lowerCase">
+                                <Input path="?a/rdfs:label"/>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:synonym"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+
+                    <OperatorFeature featureName="redirect-label-sim" dataType="nominal" blockingMode="strict">
+                        <Compare metric="levenshtein">
+                            <TransformInput function="lowerCase">
+                                <TransformInput function="replace">
+                                    <TransformInput function="stripUriPrefix">
+                                        <Input path="?a\dbpedia-prop:redirect"/>
+                                    </TransformInput>
+                                    <Param name="search" value="_"/>
+                                    <Param name="replace" value=" "/>
+                                </TransformInput>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/rdfs:label"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+
+                    <OperatorFeature featureName="redirect-synonym-sim" dataType="nominal" blockingMode="strict">
+                        <Compare metric="levenshtein">
+                            <TransformInput function="lowerCase">
+                                <TransformInput function="replace">
+                                    <TransformInput function="stripUriPrefix">
+                                        <Input path="?a\dbpedia-prop:redirect"/>
+                                    </TransformInput>
+                                    <Param name="search" value="_"/>
+                                    <Param name="replace" value=" "/>
+                                </TransformInput>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:synonym"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+
+                    <OperatorFeature featureName="label-brandName-sim" dataType="nominal" blockingMode="strict">
+                        <Compare metric="levenshtein">
+                            <TransformInput function="lowerCase">
+                                <Input path="?a/rdfs:label"/>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:brandName"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+
+                    <OperatorFeature featureName="redirect-brandName-sim" dataType="nominal" blockingMode="strict">
+                        <Compare metric="levenshtein">
+                            <TransformInput function="lowerCase">
+                                <TransformInput function="replace">
+                                    <TransformInput function="stripUriPrefix">
+                                        <Input path="?a\dbpedia-prop:redirect"/>
+                                    </TransformInput>
+                                    <Param name="search" value="_"/>
+                                    <Param name="replace" value=" "/>
+                                </TransformInput>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:brandName"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+
+                    <OperatorFeature featureName="casRegistryNumber-eq" dataType="boolean" blockingMode="strict">
+                        <Compare metric="equality">
+                            <TransformInput function="lowerCase">
+                                <Input path="?a/dbpedia-owl:casNumber"/>
+                            </TransformInput>
+                            <TransformInput function="replace">
+                                <Input path="?b/drugbank:casRegistryNumber"/>
+                                <Param name="search" value="http://bio2rdf.org/cas:"/>
+                                <Param name="replace" value=""/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+                    <OperatorFeature featureName="atcCode-eq" dataType="boolean" blockingMode="strict">
+                        <Compare metric="equality">
+                            <TransformInput function="lowerCase">
+                                <TransformInput function="concat">
+                                    <Input path="?a/dbpedia-owl:atcPrefix"/>
+                                    <Input path="?a/dbpedia-owl:atcSuffix"/>
+                                </TransformInput>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:atcCode"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+                    <OperatorFeature featureName="secondaryAccessionNumber-eq" dataType="boolean" blockingMode="strict">
+                        <Compare metric="equality">
+                            <TransformInput function="lowerCase">
+                                <Input path="?a/dbpedia-owl:drugbank"/>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:secondaryAccessionNumber"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+                    <OperatorFeature featureName="pubchemCompoundId-eq" dataType="boolean" blockingMode="strict">
+                        <Aggregate type="max">
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-owl:pubchem"/>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:pubchemCompoundId"/>
+                                </TransformInput>
+                            </Compare>
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-prop:pubchem"/>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:pubchemCompoundId"/>
+                                </TransformInput>
+                            </Compare>
+                        </Aggregate>
+                    </OperatorFeature>
+                    <OperatorFeature featureName="inchikey-eq" dataType="boolean" blockingMode="strict">
+                        <Compare metric="equality">
+                            <TransformInput function="lowerCase">
+                                <Input path="?a/dbpedia-prop:inchikey"/>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:inchiKey"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+                    <OperatorFeature featureName="iupacName-eq" dataType="boolean" blockingMode="strict">
+                        <Compare metric="equality">
+                            <TransformInput function="lowerCase">
+                                <Input path="?a/dbpedia-prop:iupacName"/>
+                            </TransformInput>
+                            <TransformInput function="lowerCase">
+                                <Input path="?b/drugbank:chemicalIupacName"/>
+                            </TransformInput>
+                        </Compare>
+                    </OperatorFeature>
+
+                    <OperatorFeature featureName="equal" dataType="boolean" blockingMode="disabled">
+                        <Aggregate type="max">
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-owl:casNumber"/>
+                                </TransformInput>
+                                <TransformInput function="replace">
+                                    <Input path="?b/drugbank:casRegistryNumber"/>
+                                    <Param name="search" value="http://bio2rdf.org/cas:"/>
+                                    <Param name="replace" value=""/>
+                                </TransformInput>
+                            </Compare>
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <TransformInput function="concat">
+                                        <Input path="?a/dbpedia-owl:atcPrefix"/>
+                                        <Input path="?a/dbpedia-owl:atcSuffix"/>
+                                    </TransformInput>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:atcCode"/>
+                                </TransformInput>
+                            </Compare>
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-owl:drugbank"/>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:secondaryAccessionNumber"/>
+                                </TransformInput>
+                            </Compare>
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-owl:pubchem"/>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:pubchemCompoundId"/>
+                                </TransformInput>
+                            </Compare>
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-prop:pubchem"/>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:pubchemCompoundId"/>
+                                </TransformInput>
+                            </Compare>
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-prop:inchikey"/>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:inchiKey"/>
+                                </TransformInput>
+                            </Compare>
+                            <Compare metric="equality">
+                                <TransformInput function="lowerCase">
+                                    <Input path="?a/dbpedia-prop:iupacName"/>
+                                </TransformInput>
+                                <TransformInput function="lowerCase">
+                                    <Input path="?b/drugbank:chemicalIupacName"/>
+                                </TransformInput>
+                            </Compare>
+                        </Aggregate>
+                    </OperatorFeature>
+
+                    <!-- during feature vector generation, we don't want to
+                        output links, so we use a classifier that always outputs false
+                    -->
+                    <Classifier type="weka">
+                        <Param name="classifierFileName" value="j48.model" />
+                        <Param name="arffDatasetFileName" value="vectors.arff" />
+                        <Param name="classField" value="equal" />
+                    </Classifier>
+
+                </Classify>
+
+            </LinkCondition>
+
+            <Filter threshold="0.2"/>
+
+            <Outputs>
+                <Output maxConfidence="0.5" type="file">
+                    <Param name="file" value="dbpedia_drugbank_drugs_verify_links.xml"/>
+                    <Param name="format" value="alignment"/>
+                </Output>
+                <Output minConfidence="0.5" type="file">
+                    <Param name="file" value="dbpedia_drugbank_drugs_accepted_links.xml"/>
+                    <Param name="format" value="ntriples"/>
+                </Output>
+            </Outputs>
+        </Interlink>
+    </Interlinks>
+</Silk>
