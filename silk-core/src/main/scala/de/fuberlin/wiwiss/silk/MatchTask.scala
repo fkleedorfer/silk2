@@ -63,10 +63,9 @@ class MatchTask(linkSpec : LinkSpecification,
 
         //Update status
         val statusPrefix = if(scheduler.isAlive) "Matching (Still loading):" else "Matching:"
-        val statusTasks = " " + finishedTasks + " tasks finished, "
-        val statusLinks = " " + linkBuffer.size + " links generated and"
-        val statusComparisons = " " + MatchTask.comparisonCount + " comparisons performed."
-        updateStatus(statusPrefix + statusTasks + statusLinks + statusComparisons, finishedTasks.toDouble / scheduler.taskCount)
+        val statusTasks = " " + finishedTasks + " tasks finished and"
+        val statusLinks = " " + linkBuffer.size + " links generated."
+        updateStatus(statusPrefix + statusTasks + statusLinks, finishedTasks.toDouble / scheduler.taskCount)
       }
     }
 
@@ -225,7 +224,6 @@ class MatchTask(linkSpec : LinkSpecification,
           val targetInstance = targetInstances(t)
 
           val confidence = linkSpec.condition(SourceTargetPair(sourceInstance, targetInstance), linkSpec.filter.threshold)
-          MatchTask.comparisonCount = MatchTask.comparisonCount + 1
 
           if(confidence >= linkSpec.filter.threshold)
           {
@@ -245,7 +243,7 @@ class MatchTask(linkSpec : LinkSpecification,
     {
       if(indexingEnabled)
       {
-        instances.map(instance => HashSet(linkSpec.condition.index(instance, linkSpec.filter.threshold, caches.source.blockCount).toSeq : _*))
+        instances.map(instance => HashSet(linkSpec.condition.index(instance, linkSpec.filter.threshold).toSeq : _*))
       }
       else
       {
@@ -263,8 +261,4 @@ class MatchTask(linkSpec : LinkSpecification,
       linkSpec.condition(instances, linkSpec.filter.threshold)
     }
   }
-}
-
-object MatchTask {
-  private var comparisonCount = 0
 }
