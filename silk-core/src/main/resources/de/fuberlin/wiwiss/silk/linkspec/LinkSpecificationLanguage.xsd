@@ -43,6 +43,7 @@
         <xs:element ref="Param" minOccurs="0" maxOccurs="unbounded"/>
       </xs:sequence>
       <xs:attribute name="metric" type="xs:string" use="required" />
+      <xs:attribute name="debugLabel" type="xs:string" use="optional" />
       <xs:attribute name="weight" type="xs:unsignedShort" />
       <xs:attribute name="required" type="xs:boolean" />
       <xs:attribute name="threshold" type="xs:double" />
@@ -121,7 +122,7 @@
       <xs:attribute name="required" type="xs:boolean" />
       <xs:attribute name="featureName" type="xs:string" />
       <xs:attribute name="dataType" type="xs:string" />
-      <xs:attribute name="disableBlocking" type="xs:boolean" />
+      <xs:attribute name="blockingMode" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
@@ -135,7 +136,7 @@
       <xs:attribute name="featureName" type="xs:string" />
       <xs:attribute name="dataType" type="xs:string" />
       <xs:attribute name="extractor" type="xs:string" />
-      <xs:attribute name="disableBlocking" type="xs:boolean" />
+      <xs:attribute name="blockingMode" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
@@ -146,11 +147,62 @@
   <xs:element name="FeatureVectorHandler">
     <xs:complexType>
       <xs:sequence>
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+          <xs:element ref="OutputRow" minOccurs="1"/>
           <xs:element ref="Param" />
         </xs:choice>
       </xs:sequence>
       <xs:attribute name="type" type="xs:string" use="required" />
+      <xs:attribute name="ignoreThreshold" type="xs:string" use="optional" />
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    Used within "FeatureVectorHandler". Encapsulates output fields.
+  -->
+  <xs:element name="OutputRow">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+          <xs:element ref="InputField" />
+          <xs:element ref="ClassificationResultField" />
+          <xs:element ref="FeatureVectorFields" />
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    Used within "OutputRow". Allows for selecting data into an output field using one or more Input or TransformInput elements.
+  -->
+  <xs:element name="InputField">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+          <xs:element ref="AnyInput" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    Used within "OutputRow". Creates an output field containing the classification result
+    -->
+  <xs:element name="ClassificationResultField">
+    <xs:complexType>
+      <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    Used within "OutputRow". Creates multiple output fields from the feature vector.
+  -->
+  <xs:element name="FeatureVectorFields">
+    <xs:complexType>
+      <xs:attribute name="omitFields" type="xs:string" use="optional" />
+      <xs:attribute name="selectFields" type="xs:string" use="optional" />
+      <xs:attribute name="missingValue" type="xs:string" use="optional" />
     </xs:complexType>
   </xs:element>
 
@@ -169,6 +221,8 @@
       <xs:attribute name="type" type="xs:string" use="required" />
     </xs:complexType>
   </xs:element>
+
+
 
   <xs:element name="Outputs">
     <xs:complexType>

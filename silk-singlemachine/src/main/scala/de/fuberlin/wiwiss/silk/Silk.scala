@@ -27,7 +27,7 @@ object Silk
   /**
    * The directory the instance cache will be written to
    */
-  private val instanceCacheDir = new File("./instanceCache/")
+  private var instanceCacheDir = new File("./instanceCache/")
 
   DefaultImplementations.register()
   DataSource.register(classOf[RdfDataSource])
@@ -40,6 +40,7 @@ object Silk
    *  - 'linkSpec' (optional): The link specifications to be executed. If not given, all link specifications are executed.
    *  - 'threads' (optional): The number of threads to be be used for matching.
    *  - 'reload' (optional): Specifies if the instance cache is to be reloaded before executing the matching. Default: true
+   *  - 'instanceCacheDir' (optional): Specifies the directory to be used for the instance caches. Will be created if it does not exist.
    */
   def execute()
   {
@@ -63,6 +64,12 @@ object Silk
       case BooleanLiteral(b) => b
       case str : String => throw new IllegalArgumentException("Property 'reload' must be an boolean")
       case _ => true
+    }
+    
+    instanceCacheDir = System.getProperty("instanceCacheDir") match
+    {
+      case dir: String => new File(dir)
+      case _ => instanceCacheDir
     }
 
     executeFile(configFile, linkSpec, numThreads, reload)
@@ -125,7 +132,7 @@ object Silk
     {
       val sources = linkSpec.datasets.map(_.sourceId).map(config.source(_))
 
-      def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold, config.blocking.map(_.blocks).getOrElse(1))
+      def blockingFunction(instance : Instance) = linkSpec.condition.index(instance, linkSpec.filter.threshold).map(_ % config.blocking.map(_.blocks).getOrElse(1))
       val loadTask = new LoadTask(sources, caches, instanceSpecs, if(config.blocking.isDefined) Some(blockingFunction _) else None)
       loader = loadTask.runInBackground()
     }

@@ -245,7 +245,7 @@ class MatchTask(linkSpec : LinkSpecification,
     {
       if(indexingEnabled)
       {
-        instances.map(instance => HashSet(linkSpec.condition.index(instance, linkSpec.filter.threshold, caches.source.blockCount).toSeq : _*))
+        instances.map(instance => HashSet(linkSpec.condition.index(instance, linkSpec.filter.threshold).toSeq : _*))
       }
       else
       {

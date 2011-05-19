@@ -4,10 +4,11 @@ import condition._
 import input.{Input, TransformInput, Transformer, PathInput}
 import de.fuberlin.wiwiss.silk.instance.Path
 import xml.Node
-import de.fuberlin.wiwiss.silk.output.Output
 import de.fuberlin.wiwiss.silk.config.Prefixes
 import de.fuberlin.wiwiss.silk.util.{Uri, Identifier, ValidatingXMLReader, SourceTargetPair}
 import java.util.logging.Logger
+import de.fuberlin.wiwiss.silk.linkspec.BlockingMode.{Strict,Lax,Disabled}
+import de.fuberlin.wiwiss.silk.output._
 
 /**
  * Represents a Silk Link Specification.
@@ -90,12 +91,40 @@ object LinkSpecification
     }
   }
 
-  private def readFeatureVectorHandlers(nodes : Seq[Node], prefixes : Map[String, String]) : Traversable[FeatureVectorHandler] =
+  private def readFeatureVectorHandlers(nodes : Seq[Node], prefixes : Map[String, String], features: Traversable[Feature]) : Traversable[FeatureVectorHandler] =
   {
     nodes.collect
     {
-      case node @ <FeatureVectorHandler>{_*}</FeatureVectorHandler> => readFeatureVectorHandler(node, prefixes)
+      case node @ <FeatureVectorHandler>{_*}</FeatureVectorHandler> => readFeatureVectorHandler(node, prefixes, features)
     }
+  }
+
+  private def readOutputRows(nodes: Seq[Node], prefixes: Map[String, String], features: Traversable[Feature]) : Seq[OutputRow] =
+  {
+    nodes.collect
+        {
+          case node @ <OutputRow>{_*}</OutputRow> => new OutputRow(readFields(node.child, prefixes, features))
+        }
+  }
+
+  private def readFields(nodes: Seq[Node], prefixes: Map[String, String], features: Traversable[Feature]) : Seq[Fields] =
+  {
+    nodes.collect
+        {
+          case node @ <FeatureVectorFields >{_*}</FeatureVectorFields> => {
+            val omitFieldsStr = node \ "@omitFields" text;
+            val selectFieldsStr = node \ "@selectFields" text;
+            val missingValueStr = node \ "@missingValue" text;
+            new FeatureVectorFields(
+              features,
+              if (missingValueStr.isEmpty) "?" else  missingValueStr,
+              if (omitFieldsStr.isEmpty) Seq.empty else omitFieldsStr.split("[,;\\s]+").toSeq,
+              if (selectFieldsStr.isEmpty) Seq.empty else selectFieldsStr.split("[,;\\s]+").toSeq
+            )
+          }
+          case node @ <ClassificationResultField>{_*}</ClassificationResultField> => new ClassificationResultFields(node \ "@name" text)
+          case node @ <InputField>{_*}</InputField> => new InputFields(node \ "@name" text, readInputs(node.child, prefixes))
+        }
   }
 
   /**
@@ -138,21 +167,29 @@ object LinkSpecification
     val weightStr = node \ "@weight" text
     val thresholdStr = node \ "@threshold" text
     val classifierAggregator = readClassifier(node.child, prefixes)
-
+    val features = readFeatures(node.child, prefixes)
     val agg = new ClassifierAggregation(
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
       if(weightStr.isEmpty) 1 else weightStr.toInt,
       if(thresholdStr.isEmpty) 0.0 else thresholdStr.toDouble,
-      readFeatures(node.child, prefixes),
+      features,
       classifierAggregator
     )
-    agg.asInstanceOf[FeatureVectorEmitter].setFeatureVectorHandlers(readFeatureVectorHandlers(node.child,prefixes))
+    agg.setFeatureVectorHandlers(readFeatureVectorHandlers(node.child,prefixes,features))
     agg
   }
 
-  private def readFeatureVectorHandler(node : Node, prefixes : Map[String, String]) : FeatureVectorHandler =
+  private def readFeatureVectorHandler(node : Node, prefixes : Map[String, String], features: Traversable[Feature]) : FeatureVectorHandler =
   {
-    FeatureVectorHandler(node \ "@type" text, readParams(node))
+    val output = FeatureVectorOutput(node \ "@type" text, readParams(node))
+    val outputRows = readOutputRows(node.child, prefixes, features)
+    output.initialize(outputRows(0).getHeader)
+    val ignoreThresholdStr = node \ "@ignoreThreshold" text;
+    new FeatureVectorHandler(
+      outputRows ,
+      output,
+      if (ignoreThresholdStr.isEmpty) false else ignoreThresholdStr.toBoolean
+    )
   }
 
   private def readClassifierAggregator(node : Node, prefixes : Map[String, String]) : ClassifierAggregator =
@@ -169,7 +206,7 @@ object LinkSpecification
   private def readOperatorFeature(node : Node, prefixes : Map[String, String]) : OperatorFeature =
   {
     val requiredStr = node \ "@required" text
-    val disableBlockingStr = node \ "@disableBlocking" text
+    val blockingModeStr = node \ "@blockingMode" text
     val nameStr = node \ "@featureName" text
     val datatypeStr:String = node \ "@dataType" text
     val operators = readOperators(node.child,prefixes)
@@ -178,7 +215,7 @@ object LinkSpecification
       nameStr,
       if (datatypeStr.isEmpty) "numeric" else datatypeStr,
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
-      if (disableBlockingStr.isEmpty) false else disableBlockingStr.toBoolean,
+      if (blockingModeStr.isEmpty) BlockingMode.Strict else BlockingMode.fromString(blockingModeStr),
       readParams(node),
       operators.head)
   }
@@ -186,7 +223,7 @@ object LinkSpecification
   private def readExtractorFeature(node : Node, prefixes : Map[String, String]) : ExtractorFeature =
   {
     val requiredStr = node \ "@required" text
-    val disableBlockingStr = node \ "@disableBlocking" text
+    val blockingModeStr = node \ "@blockingMode" text
     val nameStr = node \ "@featureName" text
     val datatypeStr:String = node \ "@dataType" text
     val inputs = readInputs(
@@ -197,7 +234,7 @@ object LinkSpecification
       nameStr,
       if (datatypeStr.isEmpty) "numeric" else datatypeStr,
       if (requiredStr.isEmpty) false else requiredStr.toBoolean,
-      if (disableBlockingStr.isEmpty) false else disableBlockingStr.toBoolean,
+      if (blockingModeStr.isEmpty) BlockingMode.Strict else BlockingMode.fromString(blockingModeStr),
       readParams(node), SourceTargetPair(inputs(0),inputs(1)),
       extractor
     )
@@ -209,6 +246,7 @@ object LinkSpecification
     val weightStr = node \ "@weight" text
     val thresholdStr = node \ "@threshold" text
     val metric = Metric(node \ "@metric" text, readParams(node))
+    val debugLabel:String = node \  "@debugLabel" text
     val inputs = readInputs(node.child, prefixes)
     logger.info("read comparison: " + metric)
     new Comparison(
@@ -216,7 +254,8 @@ object LinkSpecification
       if(weightStr.isEmpty) 1 else weightStr.toInt,
       if(thresholdStr.isEmpty) 0.0 else thresholdStr.toDouble,
       SourceTargetPair(inputs(0), inputs(1)),
-      metric
+      metric,
+      if (debugLabel.isEmpty) null else debugLabel
     )
   }
 
