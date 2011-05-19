@@ -5,7 +5,6 @@ import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import xml.Elem
 import de.fuberlin.wiwiss.silk.linkspec.input.{Transformer, TransformInput, PathInput, Input}
 import de.fuberlin.wiwiss.silk.config.Prefixes
-import BigInt._
 
 /**
  * A Link Condition specifies the conditions which must hold true so that a link is generated between two instances.
@@ -39,51 +38,29 @@ case class LinkCondition(rootOperator : Option[Operator])
    *
    * @return A set of (multidimensional) indexes. Instances within the threshold will always get the same index.
    */
-  def index(instance : Instance, threshold : Double, blocks: Int) : Set[Int] =
+  def index(instance : Instance, threshold : Double) : Set[Int] =
   {
-    val instanceIndices:Set[BigInt] = rootOperator match
+    rootOperator match
     {
       case Some(operator) =>
       {
         val indexes = operator.index(instance, threshold)
-        val bigIndexes = indexes.map(_.map(BigInt(_)))
 
-        if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-          System.out.println("--indices: " + bigIndexes)
-          System.out.println("--blocks: " + blocks)
-        }
         //Convert the index vectors to scalars
-        for(index <- bigIndexes) yield
+        for(index <- indexes) yield
         {
-          (index zip operator.blockCounts).foldLeft(BigInt(0)){case (iLeft:BigInt, (iRight, blocks)) => {
+          //added abs to avoid negative index (which can happen in case of an Int overflow)
+          math.abs((index zip operator.blockCounts).foldLeft(0){case (iLeft, (iRight, blocks)) => {
               var blocksToUse = blocks
               if (blocksToUse == 0) blocksToUse=1;
-              val res = iLeft * blocksToUse + iRight
-              if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-                System.out.println("blocks: " + blocks + ", iRight: " + iRight + " intermediate result: " + res)
-              }
-              res
+              iLeft * blocksToUse + iRight
             }
-          }
-        }:BigInt
+          })
+        }
       }
       case None => Set.empty
     }
-    if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-      System.out.println("instance indices:" + instanceIndices)
-    }
-    val blockIndices = for (index <- instanceIndices) yield {
-      val blockIndex = (index % blocks).toInt
-      if (blockIndex < 0 ) {
-        blockIndex + blocks
-      } else {
-        blockIndex
-      }
-    }
-    if (instance.uri == "http://rdf.tripwolf.com/tw.locations/9687"){
-      System.out.println("block indices: " + blockIndices)
-    }
-    blockIndices
+
   }
 
   /**
