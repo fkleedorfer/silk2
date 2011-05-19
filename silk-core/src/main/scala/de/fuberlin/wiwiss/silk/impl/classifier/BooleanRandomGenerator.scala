@@ -26,8 +26,8 @@ class BooleanRandomGenerator(trueProbability:Double, blocks: Int) extends Random
   }
 
   def index(instanceUri:String) : Set[Seq[Int]] = {
-    //return Set(Seq(instanceUri.hashCode % blockCounts(0)))
-    Set(Seq(random.nextInt(blocks)))
+    return Set(Seq(instanceUri.hashCode % blockCounts(0)))
+    //Set(Seq(random.nextInt(blocks)))
     //Set(Seq(1))
   }
 
