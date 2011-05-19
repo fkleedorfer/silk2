@@ -139,7 +139,7 @@ object Silk
     }
 
     //Execute matching
-    val matchTask = new MatchTask(linkSpec, caches, new File(instanceCacheDir+"/pairs/"), numThreads)
+    val matchTask = new MatchTask(linkSpec, caches, numThreads)
     val links = matchTask()
 
     //Filter links
