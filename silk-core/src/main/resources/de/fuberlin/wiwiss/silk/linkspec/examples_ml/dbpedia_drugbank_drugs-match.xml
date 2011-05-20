@@ -275,7 +275,7 @@
                         output links, so we use a classifier that always outputs false
                     -->
                     <Classifier type="weka">
-                        <Param name="classifierFileName" value="j48.model" />
+                        <Param name="classifierFileName" value="classifier.model" />
                         <Param name="arffDatasetFileName" value="vectors.arff" />
                         <Param name="classField" value="equal" />
                     </Classifier>
@@ -287,11 +287,11 @@
             <Filter threshold="0.2"/>
 
             <Outputs>
-                <Output maxConfidence="0.5" type="file">
+                <Output maxConfidence="0.98" type="file">
                     <Param name="file" value="dbpedia_drugbank_drugs_verify_links.xml"/>
                     <Param name="format" value="alignment"/>
                 </Output>
-                <Output minConfidence="0.5" type="file">
+                <Output minConfidence="0.98" type="file">
                     <Param name="file" value="dbpedia_drugbank_drugs_accepted_links.xml"/>
                     <Param name="format" value="ntriples"/>
                 </Output>
