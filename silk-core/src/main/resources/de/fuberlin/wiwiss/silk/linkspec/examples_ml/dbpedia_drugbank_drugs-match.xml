@@ -45,7 +45,7 @@
 
                 <Classify>
 
-                    <OperatorFeature featureName="label-sim" dataType="nominal" blockingMode="strict">
+                    <OperatorFeature featureName="label-sim" dataType="numeric" blockingMode="strict">
                         <Compare metric="levenshtein">
                             <TransformInput function="lowerCase">
                                 <Input path="?a/rdfs:label"/>
@@ -56,7 +56,7 @@
                         </Compare>
                     </OperatorFeature>
 
-                    <OperatorFeature featureName="label-synonym-sim" dataType="nominal" blockingMode="strict">
+                    <OperatorFeature featureName="label-synonym-sim" dataType="numeric" blockingMode="strict">
                         <Compare metric="levenshtein">
                             <TransformInput function="lowerCase">
                                 <Input path="?a/rdfs:label"/>
@@ -67,7 +67,7 @@
                         </Compare>
                     </OperatorFeature>
 
-                    <OperatorFeature featureName="redirect-label-sim" dataType="nominal" blockingMode="strict">
+                    <OperatorFeature featureName="redirect-label-sim" dataType="numeric" blockingMode="strict">
                         <Compare metric="levenshtein">
                             <TransformInput function="lowerCase">
                                 <TransformInput function="replace">
@@ -84,7 +84,7 @@
                         </Compare>
                     </OperatorFeature>
 
-                    <OperatorFeature featureName="redirect-synonym-sim" dataType="nominal" blockingMode="strict">
+                    <OperatorFeature featureName="redirect-synonym-sim" dataType="numeric" blockingMode="strict">
                         <Compare metric="levenshtein">
                             <TransformInput function="lowerCase">
                                 <TransformInput function="replace">
@@ -101,7 +101,7 @@
                         </Compare>
                     </OperatorFeature>
 
-                    <OperatorFeature featureName="label-brandName-sim" dataType="nominal" blockingMode="strict">
+                    <OperatorFeature featureName="label-brandName-sim" dataType="numeric" blockingMode="strict">
                         <Compare metric="levenshtein">
                             <TransformInput function="lowerCase">
                                 <Input path="?a/rdfs:label"/>
@@ -112,7 +112,7 @@
                         </Compare>
                     </OperatorFeature>
 
-                    <OperatorFeature featureName="redirect-brandName-sim" dataType="nominal" blockingMode="strict">
+                    <OperatorFeature featureName="redirect-brandName-sim" dataType="numeric" blockingMode="strict">
                         <Compare metric="levenshtein">
                             <TransformInput function="lowerCase">
                                 <TransformInput function="replace">
