@@ -127,15 +127,6 @@
       <url>http://scala-tools.org/repo-releases/</url>
     </repository>
 
-    <repository>
-      <id>local-repo</id>
-      <url>file://${basedir}/localMavenRepo</url>
-    </repository>
-
-    <repository>
-      <id>local-parent-repo</id>
-      <url>file://${basedir}/../localMavenRepo</url>
-    </repository>
 
   </repositories>
 
