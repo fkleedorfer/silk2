@@ -17,9 +17,9 @@ import de.fuberlin.wiwiss.silk.instance.Path
 import de.fuberlin.wiwiss.silk.util.strategy.{Parameter, Strategy}
 import net.liftweb.widgets.autocomplete.AutoComplete
 import scala.xml.Text
-import de.fuberlin.wiwiss.silk.workbench.lift.util.ConfigBuilder
-import de.fuberlin.wiwiss.silk.workbench.workspace.{ProjectExporter, FileUser, User}
 import de.fuberlin.wiwiss.silk.config.Prefixes
+import de.fuberlin.wiwiss.silk.workbench.workspace.{FileUser, User}
+import de.fuberlin.wiwiss.silk.workbench.workspace.io.{SilkConfigExporter, ProjectExporter}
 
 /**
   * A class that's instantiated early and run.  It allows the application
@@ -28,6 +28,12 @@ import de.fuberlin.wiwiss.silk.config.Prefixes
 class Boot
 {
   object UserManager extends SessionVar[User](new FileUser)
+  {
+    override protected def onShutdown(session : CleanUpParam)
+    {
+      is.dispose()
+    }
+  }
 
   def boot
   {
@@ -43,8 +49,8 @@ class Boot
     LiftRules.addToPackages("de.fuberlin.wiwiss.silk.workbench.lift")
 
     // Build SiteMap
-    val ifLinkingTaskOpen = If(() => User().linkingTaskOpen, () => RedirectResponse("/index"))
-    val ifLinkingTaskClosed = If(() => !User().linkingTaskOpen, () => RedirectResponse("/linkSpec"))
+    val ifLinkingTaskOpen = If(() => User().linkingTaskOpen, () => RedirectResponse("index"))
+    val ifLinkingTaskClosed = If(() => !User().linkingTaskOpen, () => RedirectResponse("linkSpec"))
 
     val workspaceText = LinkText[Unit](_ => Text(if(User().projectOpen) "Workspace: " + User().project.name else "Workspace"))
     val linkSpecText = LinkText[Unit](_ => Text(User().project.name + ": " + User().linkingTask.name))
@@ -52,8 +58,8 @@ class Boot
     val entries =
         Menu(Loc("Workspace", List("index"), workspaceText, ifLinkingTaskClosed)) ::
         Menu(Loc("Link Specification", List("linkSpec"), linkSpecText, ifLinkingTaskOpen)) ::
-        Menu(Loc("Evaluate", List("evaluate"), "Evaluate", ifLinkingTaskOpen)) ::
-        Menu(Loc("Reference Links", List("alignment"), "Reference Links", ifLinkingTaskOpen)) :: Nil
+        Menu(Loc("Generate Links", List("generateLinks"), "Generate Links", ifLinkingTaskOpen)) ::
+        Menu(Loc("Reference Links", List("referenceLinks"), "Reference Links", ifLinkingTaskOpen)) :: Nil
 
     LiftRules.setSiteMap(SiteMap(entries:_*))
 
@@ -72,7 +78,7 @@ class Boot
     case req @ Req(List("config"), "xml", GetRequest) =>
     {
       val outputStream = new ByteArrayOutputStream()
-      val configXml = ConfigBuilder.build().toXML
+      val configXml = SilkConfigExporter.build().toXML
       val configStr = new PrettyPrinter(140, 2).format(configXml)
       () => Full(InMemoryResponse(configStr.getBytes, ("Content-Type", "application/xml") :: ("Content-Disposition", "attachment") :: Nil, Nil, 200))
     }
@@ -104,11 +110,11 @@ class Boot
                                                JField("variable", JString(datasets.target.variable)) :: Nil))
 
     var errorMsg : Option[String] = None
-    if(linkingTask.cacheLoading != null && linkingTask.cacheLoading.isSet)
+    if(linkingTask.cache.isLoading != null && linkingTask.cache.isLoading.isSet)
     {
       try
       {
-        linkingTask.cacheLoading()
+        linkingTask.cache.isLoading()
       }
       catch
       {
@@ -164,7 +170,7 @@ class Boot
       JObject(JField("name", JString(parameter.name)) ::
               JField("type", JString(parameter.dataType.toString)) ::
               JField("optional", JBool(parameter.defaultValue.isDefined)) ::
-              /*JField("description", JString(parameter.description)) ::*/ Nil)
+              parameter.defaultValue.map(value => JField("defaultValue", JString(value.toString))).toList)
     }
   }
 }

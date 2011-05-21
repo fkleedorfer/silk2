@@ -42,7 +42,6 @@ class XMLProject(linkSpec : Node) extends Project
   override def config =
   {
     val prefixes = (doc \ "Prefixes" headOption).map(Prefixes.fromXML).getOrElse(Prefixes.empty)
-
     ProjectConfig(prefixes)
   }
 
@@ -113,7 +112,7 @@ class XMLProject(linkSpec : Node) extends Project
 
      for(lt <- doc \ "Interlinks" \ "Interlink" ) yield {
         val linkT = LinkSpecification.fromXML(lt)
-        val linkingTask = LinkingTask((lt \ "@id").text, linkT, new Alignment(), new Cache())
+        val linkingTask = LinkingTask(linkT, new Alignment(), new Cache())
         linkingTask
       }
     }

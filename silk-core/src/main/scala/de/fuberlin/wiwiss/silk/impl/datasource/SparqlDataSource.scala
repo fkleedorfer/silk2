@@ -1,10 +1,11 @@
 package de.fuberlin.wiwiss.silk.impl.datasource
 
 import de.fuberlin.wiwiss.silk.datasource.DataSource
-import de.fuberlin.wiwiss.silk.instance.InstanceSpecification
 import java.net.URI
 import de.fuberlin.wiwiss.silk.util.strategy.StrategyAnnotation
-import de.fuberlin.wiwiss.silk.util.sparql.{InstanceRetriever, RemoteSparqlEndpoint}
+import de.fuberlin.wiwiss.silk.util.sparql.{SparqlSamplePathsCollector, SparqlAggregatePathsCollector, InstanceRetriever, RemoteSparqlEndpoint}
+import java.util.logging.{Level, Logger}
+import de.fuberlin.wiwiss.silk.instance.{SparqlRestriction, Path, InstanceSpecification}
 
 /**
  * DataSource which retrieves all instances from a SPARQL endpoint
@@ -27,19 +28,44 @@ class SparqlDataSource(endpointURI : String, login : String = null, password : S
 {
   private val uri = new URI(endpointURI)
 
+  private val loginComplete = if(login != null) Some((login, password)) else None
+
   private val graphUri = if(graph == null) None else Some(graph)
 
   private val instanceUris = Option(instanceList).getOrElse("").split(' ').map(_.trim).filter(!_.isEmpty)
 
+  private val logger = Logger.getLogger(SparqlDataSource.getClass.getName)
+
   override def retrieve(instanceSpec : InstanceSpecification, instances : Seq[String]) =
   {
-    val loginComplete =  if(login != null) Some((login, password)) else None
-
-    val endpoint = new RemoteSparqlEndpoint(uri, loginComplete, pageSize, pauseTime, retryCount, retryPause)
-
-    val instanceRetriever = InstanceRetriever(endpoint, pageSize, graphUri)
+    val instanceRetriever = InstanceRetriever(createEndpoint(), pageSize, graphUri)
 
     instanceRetriever.retrieve(instanceSpec, instanceUris union instances)
+  }
+
+  override def retrievePaths(restrictions : SparqlRestriction, depth : Int, limit : Option[Int]) : Traversable[(Path, Double)] =
+  {
+    //Create an endpoint which fails after 3 retries
+    val failFastEndpoint = new RemoteSparqlEndpoint(uri, loginComplete, pageSize, pauseTime, 3, 1000)
+
+    try
+    {
+      SparqlAggregatePathsCollector(failFastEndpoint, restrictions, limit)
+    }
+    catch
+    {
+      case ex : Exception =>
+      {
+        logger.log(Level.INFO, "Failed to retrieve the most frequent paths using a SPARQL 1.1 aggregation query. Falling back to sampling.", ex)
+
+        SparqlSamplePathsCollector(createEndpoint(), restrictions, limit)
+      }
+    }
+  }
+
+  protected def createEndpoint() =
+  {
+    new RemoteSparqlEndpoint(uri, loginComplete, pageSize, pauseTime, retryCount, retryPause)
   }
 
   override def toString = endpointURI
