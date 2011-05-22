@@ -27,7 +27,7 @@ object Silk
   /**
    * The directory the instance cache will be written to
    */
-  private val instanceCacheDir = new File(System.getProperty("user.home") + "/.silk/instanceCache/")
+  private var instanceCacheDir = new File(System.getProperty("user.home") + "/.silk/instanceCache/")
 
   DefaultImplementations.register()
   DataSource.register(classOf[RdfDataSource])
