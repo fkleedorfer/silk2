@@ -6,7 +6,7 @@ import scala.math.{min, max, abs}
 import de.fuberlin.wiwiss.silk.util.strategy.StrategyAnnotation
 
 @StrategyAnnotation(id = "levenshtein", label = "Levenshtein distance", description = "String similarity based on the Levenshtein metric.")
-class LevenshteinMetric(maxDistance : Int = -1, minChar : Char = '0', maxChar : Char = 'z', q : Int = 1) extends Metric
+case class LevenshteinMetric(maxDistance : Int = -1, minChar : Char = '0', maxChar : Char = 'z', q : Int = 1) extends Metric
 {
   override def evaluate(str1 : String, str2 : String, threshold : Double) =
   {
@@ -16,7 +16,7 @@ class LevenshteinMetric(maxDistance : Int = -1, minChar : Char = '0', maxChar : 
       case d => d
     }
 
-    if(abs(str1.length - str2.length) > k * (1.0 - threshold))
+    if(abs(str1.length - str2.length) >= k * (1.0 - threshold))
     {
       0.0
     }
