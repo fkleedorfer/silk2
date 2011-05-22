@@ -4,7 +4,7 @@ import de.fuberlin.wiwiss.silk.instance.Instance
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
 import de.fuberlin.wiwiss.silk.config.Prefixes
 
-case class Aggregation(required : Boolean, weight : Int, threshold: Double, operators : Traversable[Operator], aggregator : Aggregator) extends Operator
+case class Aggregation(required : Boolean, weight : Int, threshold: Double, operators : Seq[Operator], aggregator : Aggregator) extends Operator
 {
   /**
    * Computes the similarity between two instances.
@@ -26,7 +26,8 @@ case class Aggregation(required : Boolean, weight : Int, threshold: Double, oper
       {
         val value = operator(instances, aggregator.computeThreshold(threshold, operator.weight.toDouble / totalWeights))
         if(operator.required && value.isEmpty) return None
-        (operator.weight,value.getOrElse(0.0))
+
+        (operator.weight, value.getOrElse(0.0))
       }
     }
     if (required && weightedValues.size == 0) return None

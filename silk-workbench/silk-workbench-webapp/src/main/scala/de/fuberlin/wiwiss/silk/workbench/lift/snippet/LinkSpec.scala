@@ -12,6 +12,8 @@ import de.fuberlin.wiwiss.silk.workbench.workspace.User
 import net.liftweb.http.js.{JsCmd, JsCmds}
 import net.liftweb.http.js.JsCmds.OnLoad
 import de.fuberlin.wiwiss.silk.workbench.lift.util.JavaScriptUtils.Redirect
+import de.fuberlin.wiwiss.silk.MatchTask
+import java.util.logging.{Level, Logger}
 
 /**
  * LinkSpec snippet.
@@ -22,6 +24,8 @@ import de.fuberlin.wiwiss.silk.workbench.lift.util.JavaScriptUtils.Redirect
  */
 class LinkSpec
 {
+  private val logger = Logger.getLogger(classOf[LinkSpec].getName)
+
   /**
    * Renders the toolbar.
    */
@@ -52,7 +56,7 @@ class LinkSpec
     bind("entry", xhtml,
          "close" -> (initDialog ++ SHtml.ajaxButton("Close", openDialog _)),
          "save" -> SHtml.ajaxButton("Save", () => saveCall(false)),
-         "export" -> SHtml.ajaxButton("Export as Silk-LS", () => Redirect("/config.xml")))
+         "export" -> SHtml.ajaxButton("Export as Silk-LS", () => Redirect("config.xml")))
   }
 
   /**
@@ -76,8 +80,7 @@ class LinkSpec
       implicit val prefixes = project.config.prefixes
 
       //Load link specification
-      //TODO remove replace as soon as double encoding is fixed in editor
-      val linkSpec = LinkSpecification.load(prefixes)(new StringReader(linkSpecStr.replace("&amp;", "&")))
+      val linkSpec = LinkSpecification.load(prefixes)(new StringReader(linkSpecStr))
 
       //Update linking task
       val updatedLinkingTask = linkingTask.copy(linkSpec = linkSpec)
@@ -97,8 +100,11 @@ class LinkSpec
     }
     catch
     {
-      case ex : Exception => JsRaw("alert('Error updating Link Specification.\\n\\nDetails: " + ex.getMessage.encJs +
-          ".\\n\\nLink Spec:\\n" + linkSpecStr.encJs + "');").cmd
+      case ex : Exception =>
+      {
+        logger.log(Level.INFO, "Failed to save link specification", ex)
+        JsRaw("alert('Error updating Link Specification.\\n\\nDetails: " + ex.getMessage.encJs + ".');").cmd
+      }
     }
   }
 
@@ -111,7 +117,7 @@ class LinkSpec
     {
       User().closeTask()
 
-      Redirect("/index.html")
+      Redirect("index.html")
     }
     catch
     {
@@ -128,7 +134,7 @@ class LinkSpec
     implicit val prefixes = User().project.config.prefixes
 
     //Serialize the link condition to a JavaScript string
-    val linkSpecStr = linkingTask.linkSpec.toXML.toString.replace("\n", " ")
+    val linkSpecStr = linkingTask.linkSpec.toXML.toString.replace("\n", " ").replace("\\", "\\\\")
 
     val linkSpecVar = "var linkSpec = '" + linkSpecStr + "';"
 
@@ -142,7 +148,7 @@ class LinkSpec
   {
     def reloadCache =
     {
-      User().linkingTask.reloadCache(User().project)
+      User().linkingTask.cache.reload(User().project, User().linkingTask)
       JsRaw("").cmd
     }
 

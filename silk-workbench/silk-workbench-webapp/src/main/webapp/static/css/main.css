@@ -17,6 +17,7 @@ a
 {
 	text-decoration: none;
  	color: #0000a0;
+    margin: 0px;
 }
 
 table
@@ -33,6 +34,11 @@ td
 pre
 {
 	font-family: "Courier New", Courier, monospace;
+}
+
+button
+{
+  margin-top: 0;
 }
 
 /* Tabbar
@@ -94,11 +100,18 @@ pre
 #toolbar
 {
   height: 40px;
-  /* background: url('/static/img/toolbar.png') repeat-x;  */
-  margin-left: 10px;
+  background: url('/static/img/toolbar-bg.png') repeat-x;
+  padding-left: 10px;
   position: relative;
   /* width: 100%; */
   clear: both;
+}
+
+#toolbar ul
+{
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
 }
 
 #toolbar li
@@ -109,15 +122,9 @@ pre
   float: left;
 }
 
-input[type=file]
-{
-  background-color: black;
-  color: white;
-}
-
 .ui-progressbar
 {
-  margin-top: 3px;
+  margin-top: 0;
   width: 300px;
 }
 

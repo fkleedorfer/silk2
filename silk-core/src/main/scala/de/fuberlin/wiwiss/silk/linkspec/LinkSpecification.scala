@@ -4,6 +4,7 @@ import condition._
 import input.{Input, TransformInput, Transformer, PathInput}
 import de.fuberlin.wiwiss.silk.instance.Path
 import xml.Node
+import de.fuberlin.wiwiss.silk.output.Output
 import de.fuberlin.wiwiss.silk.config.Prefixes
 import de.fuberlin.wiwiss.silk.util.{Uri, Identifier, ValidatingXMLReader, SourceTargetPair}
 import java.util.logging.Logger
@@ -60,54 +61,54 @@ object LinkSpecification
       resolveQualifiedName(node \ "LinkType" text, prefixes),
       new SourceTargetPair(DatasetSpecification.fromXML(node \ "SourceDataset" head),
                            DatasetSpecification.fromXML(node \ "TargetDataset" head)),
-      readLinkCondition(node \ "LinkCondition" head, prefixes),
+      readLinkCondition(node \ "LinkCondition" head),
       LinkFilter.fromXML(node \ "Filter" head),
       (node \ "Outputs" \ "Output").map(Output.fromXML)
     )
   }
 
-  private def readLinkCondition(node : Node, prefixes : Map[String, String]) =
+  private def readLinkCondition(node : Node)(implicit prefixes : Prefixes) =
   {
-    LinkCondition(readOperators(node.child, prefixes).headOption)
+    LinkCondition(readOperators(node.child).headOption)
   }
 
-  private def readOperators(nodes : Seq[Node], prefixes : Map[String, String]) : Traversable[Operator] =
-  {
-    nodes.collect
-    {
-      case node @ <Aggregate>{_*}</Aggregate> => readAggregation(node, prefixes)
-      case node @ <Compare>{_*}</Compare> => readComparison(node, prefixes)
-      case node @ <Random>{_*}</Random> => readRandomOperator(node, prefixes)
-      case node @ <Classify>{_*}</Classify> => readClassifierAggregation(node,prefixes)
-    }
-  }
-
-  private def readFeatures(nodes : Seq[Node], prefixes : Map[String, String]) : Traversable[Feature] =
+  private def readOperators(nodes : Seq[Node])(implicit prefixes : Prefixes) : Seq[Operator] =
   {
     nodes.collect
     {
-      case node @ <OperatorFeature>{_*}</OperatorFeature> => readOperatorFeature(node, prefixes)
-      case node @ <ExtractorFeature>{_*}</ExtractorFeature> => readExtractorFeature(node, prefixes)
+      case node @ <Aggregate>{_*}</Aggregate> => readAggregation(node)
+      case node @ <Compare>{_*}</Compare> => readComparison(node)
+      case node @ <Random>{_*}</Random> => readRandomOperator(node)
+      case node @ <Classify>{_*}</Classify> => readClassifierAggregation(node)
     }
   }
 
-  private def readFeatureVectorHandlers(nodes : Seq[Node], prefixes : Map[String, String], features: Traversable[Feature]) : Traversable[FeatureVectorHandler] =
+  private def readFeatures(nodes : Seq[Node])(implicit prefixes : Prefixes) : Traversable[Feature] =
   {
     nodes.collect
     {
-      case node @ <FeatureVectorHandler>{_*}</FeatureVectorHandler> => readFeatureVectorHandler(node, prefixes, features)
+      case node @ <OperatorFeature>{_*}</OperatorFeature> => readOperatorFeature(node)
+      case node @ <ExtractorFeature>{_*}</ExtractorFeature> => readExtractorFeature(node)
     }
   }
 
-  private def readOutputRows(nodes: Seq[Node], prefixes: Map[String, String], features: Traversable[Feature]) : Seq[OutputRow] =
+  private def readFeatureVectorHandlers(nodes : Seq[Node], features: Traversable[Feature])(implicit prefixes : Prefixes) : Traversable[FeatureVectorHandler] =
+  {
+    nodes.collect
+    {
+      case node @ <FeatureVectorHandler>{_*}</FeatureVectorHandler> => readFeatureVectorHandler(node, features)
+    }
+  }
+
+  private def readOutputRows(nodes: Seq[Node], features: Traversable[Feature])(implicit prefixes : Prefixes) : Seq[OutputRow] =
   {
     nodes.collect
         {
-          case node @ <OutputRow>{_*}</OutputRow> => new OutputRow(readFields(node.child, prefixes, features))
+          case node @ <OutputRow>{_*}</OutputRow> => new OutputRow(readFields(node.child, features))
         }
   }
 
-  private def readFields(nodes: Seq[Node], prefixes: Map[String, String], features: Traversable[Feature]) : Seq[Fields] =
+  private def readFields(nodes: Seq[Node], features: Traversable[Feature])(implicit prefixes : Prefixes) : Seq[Fields] =
   {
     nodes.collect
         {
@@ -123,18 +124,18 @@ object LinkSpecification
             )
           }
           case node @ <ClassificationResultField>{_*}</ClassificationResultField> => new ClassificationResultFields(node \ "@name" text)
-          case node @ <InputField>{_*}</InputField> => new InputFields(node \ "@name" text, readInputs(node.child, prefixes))
+          case node @ <InputField>{_*}</InputField> => new InputFields(node \ "@name" text, readInputs(node.child))
         }
   }
 
   /**
    * Only reads the first classifier found.
    */
-  private def readClassifier(nodes : Seq[Node], prefixes : Map[String, String]) : ClassifierAggregator =
+  private def readClassifier(nodes : Seq[Node])(implicit prefixes : Prefixes) : ClassifierAggregator =
   {
     val classifiers = nodes.collect
     {
-      case node @ <Classifier>{_*}</Classifier> => readClassifierAggregator(node, prefixes)
+      case node @ <Classifier>{_*}</Classifier> => readClassifierAggregator(node)
     }
     if (classifiers.isEmpty){
       throw new IllegalStateException("no <Classifier> element found!")
@@ -143,7 +144,7 @@ object LinkSpecification
     }
   }
 
-  private def readAggregation(node : Node, prefixes : Map[String, String]) : Aggregation =
+  private def readAggregation(node : Node)(implicit prefixes : Prefixes) : Aggregation =
   {
     val requiredStr = node \ "@required" text
     val weightStr = node \ "@weight" text
@@ -154,20 +155,20 @@ object LinkSpecification
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
       if(weightStr.isEmpty) 1 else weightStr.toInt,
       if(thresholdStr.isEmpty) 0.0 else thresholdStr.toDouble,
-      readOperators(node.child, prefixes),
+      readOperators(node.child),
       aggregator
     )
   }
 
 
 
-  private def readClassifierAggregation(node : Node, prefixes : Map[String, String]) : ClassifierAggregation =
+  private def readClassifierAggregation(node : Node)(implicit prefixes : Prefixes) : ClassifierAggregation =
   {
     val requiredStr = node \ "@required" text
     val weightStr = node \ "@weight" text
     val thresholdStr = node \ "@threshold" text
-    val classifierAggregator = readClassifier(node.child, prefixes)
-    val features = readFeatures(node.child, prefixes)
+    val classifierAggregator = readClassifier(node.child)
+    val features = readFeatures(node.child)
     val agg = new ClassifierAggregation(
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
       if(weightStr.isEmpty) 1 else weightStr.toInt,
@@ -175,14 +176,14 @@ object LinkSpecification
       features,
       classifierAggregator
     )
-    agg.setFeatureVectorHandlers(readFeatureVectorHandlers(node.child,prefixes,features))
+    agg.setFeatureVectorHandlers(readFeatureVectorHandlers(node.child,features))
     agg
   }
 
-  private def readFeatureVectorHandler(node : Node, prefixes : Map[String, String], features: Traversable[Feature]) : FeatureVectorHandler =
+  private def readFeatureVectorHandler(node : Node, features: Traversable[Feature])(implicit prefixes : Prefixes) : FeatureVectorHandler =
   {
     val output = FeatureVectorOutput(node \ "@type" text, readParams(node))
-    val outputRows = readOutputRows(node.child, prefixes, features)
+    val outputRows = readOutputRows(node.child, features)
     output.initialize(outputRows(0).getHeader)
     val ignoreThresholdStr = node \ "@ignoreThreshold" text;
     new FeatureVectorHandler(
@@ -192,7 +193,7 @@ object LinkSpecification
     )
   }
 
-  private def readClassifierAggregator(node : Node, prefixes : Map[String, String]) : ClassifierAggregator =
+  private def readClassifierAggregator(node : Node)(implicit prefixes : Prefixes) : ClassifierAggregator =
   {
     val clType = node \ "@type" text
     val params = readParams(node)
@@ -203,13 +204,13 @@ object LinkSpecification
   /**
    * Feature only uses the first operator.
    */
-  private def readOperatorFeature(node : Node, prefixes : Map[String, String]) : OperatorFeature =
+  private def readOperatorFeature(node : Node)(implicit prefixes : Prefixes) : OperatorFeature =
   {
     val requiredStr = node \ "@required" text
     val blockingModeStr = node \ "@blockingMode" text
     val nameStr = node \ "@featureName" text
     val datatypeStr:String = node \ "@dataType" text
-    val operators = readOperators(node.child,prefixes)
+    val operators = readOperators(node.child)
     logger.info("required="+requiredStr+", featureName="+nameStr+", dataType="+ datatypeStr + ", operators=" + operators)
     new OperatorFeature(
       nameStr,
@@ -220,14 +221,14 @@ object LinkSpecification
       operators.head)
   }
 
-  private def readExtractorFeature(node : Node, prefixes : Map[String, String]) : ExtractorFeature =
+  private def readExtractorFeature(node : Node)(implicit prefixes : Prefixes) : ExtractorFeature =
   {
     val requiredStr = node \ "@required" text
     val blockingModeStr = node \ "@blockingMode" text
     val nameStr = node \ "@featureName" text
     val datatypeStr:String = node \ "@dataType" text
     val inputs = readInputs(
-      node.child, prefixes)
+      node.child)
     val extractor = Extractor(node \ "@extractor" text, readParams(node))
     logger.info("extractor feature created, featureName=" + nameStr)
     new ExtractorFeature(
@@ -240,14 +241,14 @@ object LinkSpecification
     )
   }
   
-  private def readComparison(node : Node, prefixes : Map[String, String]) : Comparison =
+  private def readComparison(node : Node)(implicit prefixes : Prefixes) : Comparison =
   {
     val requiredStr = node \ "@required" text
     val weightStr = node \ "@weight" text
     val thresholdStr = node \ "@threshold" text
     val metric = Metric(node \ "@metric" text, readParams(node))
     val debugLabel:String = node \  "@debugLabel" text
-    val inputs = readInputs(node.child, prefixes)
+    val inputs = readInputs(node.child)
     logger.info("read comparison: " + metric)
     new Comparison(
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
@@ -259,7 +260,7 @@ object LinkSpecification
     )
   }
 
-  private def readRandomOperator(node : Node, prefixes : Map[String, String]) : RandomOperator =
+  private def readRandomOperator(node : Node)(implicit prefixes : Prefixes) : RandomOperator =
   {
     val requiredStr = node \ "@required" text
     val weightStr = node \ "@weight" text
@@ -274,19 +275,19 @@ object LinkSpecification
     )
   }
 
-  private def readInputs(nodes : Seq[Node], prefixes : Map[String, String]) : Seq[Input] =
+  private def readInputs(nodes : Seq[Node])(implicit prefixes : Prefixes) : Seq[Input] =
   {
     nodes.collect {
       case p @ <Input/> =>
       {
         val pathStr = p \ "@path" text
-        val path = Path.parse(pathStr, prefixes)
+        val path = Path.parse(pathStr)
         PathInput(path)
       }
       case p @ <TransformInput>{_*}</TransformInput> =>
       {
         val transformer = Transformer(p \ "@function" text, readParams(p))
-        TransformInput(readInputs(p.child, prefixes), transformer)
+        TransformInput(readInputs(p.child), transformer)
       }
     }
   }

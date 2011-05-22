@@ -1,6 +1,7 @@
 package de.fuberlin.wiwiss.silk
 
 import instance.{Instance, InstanceCache}
+import linkspec.evaluation.DetailedEvaluator
 import linkspec.LinkSpecification
 import java.util.logging.{Level, Logger}
 import output.Link
@@ -9,6 +10,7 @@ import collection.mutable.{SynchronizedBuffer, Buffer, ArrayBuffer}
 import collection.immutable.HashSet
 import util.{SourceTargetPair, Task}
 import scala.math.max
+import collection.immutable.List._
 
 /**
  * Executes the matching.
@@ -16,7 +18,8 @@ import scala.math.max
  */
 class MatchTask(linkSpec : LinkSpecification,
                 caches : SourceTargetPair[InstanceCache],
-                numThreads : Int) extends Task[Buffer[Link]]
+                numThreads : Int,
+                generateDetailedLinks : Boolean = false) extends Task[Buffer[Link]]
 {
   taskName = "Matching"
 
@@ -63,10 +66,9 @@ class MatchTask(linkSpec : LinkSpecification,
 
         //Update status
         val statusPrefix = if(scheduler.isAlive) "Matching (Still loading):" else "Matching:"
-        val statusTasks = " " + finishedTasks + " tasks finished, "
-        val statusLinks = " " + linkBuffer.size + " links generated and"
-        val statusComparisons = " " + MatchTask.comparisonCount + " comparisons performed."
-        updateStatus(statusPrefix + statusTasks + statusLinks + statusComparisons, finishedTasks.toDouble / scheduler.taskCount)
+        val statusTasks = " " + finishedTasks + " tasks finished and"
+        val statusLinks = " " + linkBuffer.size + " links generated."
+        updateStatus(statusPrefix + statusTasks + statusLinks, finishedTasks.toDouble / scheduler.taskCount)
       }
     }
 
@@ -223,13 +225,23 @@ class MatchTask(linkSpec : LinkSpecification,
         {
           val sourceInstance = sourceInstances(s)
           val targetInstance = targetInstances(t)
+          val instances = SourceTargetPair(sourceInstance, targetInstance)
 
-          val confidence = linkSpec.condition(SourceTargetPair(sourceInstance, targetInstance), linkSpec.filter.threshold)
-          MatchTask.comparisonCount = MatchTask.comparisonCount + 1
-
-          if(confidence >= linkSpec.filter.threshold)
+          if(!generateDetailedLinks)
           {
-            links ::= new Link(sourceInstance.uri, targetInstance.uri, confidence)
+            val confidence = linkSpec.condition(instances, linkSpec.filter.threshold)
+
+            if(confidence >= linkSpec.filter.threshold)
+            {
+              links ::= new Link(sourceInstance.uri, targetInstance.uri, confidence)
+            }
+          }
+          else
+          {
+            for(link <- DetailedEvaluator(linkSpec.condition, instances, linkSpec.filter.threshold))
+            {
+              links ::= link
+            }
           }
         }
       }
@@ -263,8 +275,4 @@ class MatchTask(linkSpec : LinkSpecification,
       linkSpec.condition(instances, linkSpec.filter.threshold)
     }
   }
-}
-
-object MatchTask {
-  private var comparisonCount = 0
 }
