@@ -15,6 +15,9 @@ trait Operator
 
   val weight : Int
 
+  //Operator-specific threshold
+  val threshold: Double
+  
   /**
    * Computes the similarity between two instances.
    *
@@ -25,9 +28,7 @@ trait Operator
    *         Returns 0.0 if the similarity is lower than the threshold.
    *         None, if no similarity could be computed.
    */
-  val threshold: Double
-
-  def apply(instances : SourceTargetPair[Instance], threshold : Double) : Option[Double]
+  def apply(instances : SourceTargetPair[Instance], threshold : Double = 0.0) : Option[Double]
 
   /**
    * Indexes an instance.

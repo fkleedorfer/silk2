@@ -4,6 +4,7 @@ import condition._
 import input.{Input, TransformInput, Transformer, PathInput}
 import de.fuberlin.wiwiss.silk.instance.Path
 import xml.Node
+import de.fuberlin.wiwiss.silk.output.Output
 import de.fuberlin.wiwiss.silk.config.Prefixes
 import de.fuberlin.wiwiss.silk.util.{Uri, Identifier, ValidatingXMLReader, SourceTargetPair}
 import java.util.logging.Logger
@@ -60,25 +61,25 @@ object LinkSpecification
       resolveQualifiedName(node \ "LinkType" text, prefixes),
       new SourceTargetPair(DatasetSpecification.fromXML(node \ "SourceDataset" head),
                            DatasetSpecification.fromXML(node \ "TargetDataset" head)),
-      readLinkCondition(node \ "LinkCondition" head, prefixes),
+      readLinkCondition(node \ "LinkCondition" head),
       LinkFilter.fromXML(node \ "Filter" head),
       (node \ "Outputs" \ "Output").map(Output.fromXML)
     )
   }
 
-  private def readLinkCondition(node : Node, prefixes : Map[String, String]) =
+  private def readLinkCondition(node : Node)(implicit prefixes : Prefixes) =
   {
-    LinkCondition(readOperators(node.child, prefixes).headOption)
+    LinkCondition(readOperators(node.child).headOption)
   }
 
-  private def readOperators(nodes : Seq[Node], prefixes : Map[String, String]) : Traversable[Operator] =
+  private def readOperators(nodes : Seq[Node])(implicit prefixes : Prefixes) : Seq[Operator] =
   {
     nodes.collect
     {
-      case node @ <Aggregate>{_*}</Aggregate> => readAggregation(node, prefixes)
-      case node @ <Compare>{_*}</Compare> => readComparison(node, prefixes)
-      case node @ <Random>{_*}</Random> => readRandomOperator(node, prefixes)
-      case node @ <Classify>{_*}</Classify> => readClassifierAggregation(node,prefixes)
+      case node @ <Aggregate>{_*}</Aggregate> => readAggregation(node)
+      case node @ <Compare>{_*}</Compare> => readComparison(node)
+      case node @ <Random>{_*}</Random> => readRandomOperator(node)
+      case node @ <Classify>{_*}</Classify> => readClassifierAggregation(node)
     }
   }
 
@@ -280,13 +281,13 @@ object LinkSpecification
       case p @ <Input/> =>
       {
         val pathStr = p \ "@path" text
-        val path = Path.parse(pathStr, prefixes)
+        val path = Path.parse(pathStr)
         PathInput(path)
       }
       case p @ <TransformInput>{_*}</TransformInput> =>
       {
         val transformer = Transformer(p \ "@function" text, readParams(p))
-        TransformInput(readInputs(p.child, prefixes), transformer)
+        TransformInput(readInputs(p.child), transformer)
       }
     }
   }

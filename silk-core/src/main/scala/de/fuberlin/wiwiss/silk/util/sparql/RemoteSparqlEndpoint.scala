@@ -79,7 +79,7 @@ class RemoteSparqlEndpoint(val uri : URI,
       //Execute query
       if(logger.isLoggable(Level.FINE)) logger.fine("Executing query on " + uri +"\n" + query)
 
-      val url = new URL(uri + "?format=application/sparql-results+xml&query=" + URLEncoder.encode(query, "UTF-8"))
+      val url = new URL(uri + "?format=application/sparql-results%2Bxml&query=" + URLEncoder.encode(query, "UTF-8"))
 
       var result : Elem = null
       var retries = 0
@@ -108,7 +108,7 @@ class RemoteSparqlEndpoint(val uri : URI,
               if(errorStream != null)
               {
                 val errorMessage = Source.fromInputStream(errorStream).getLines.mkString("\n")
-                logger.info("Query on " + uri + " failed. Error Message: '" + errorMessage + "'.\nRetrying in " + retryPause + " ms. (" + retries + "/" + retryCount + ")")
+                logger.info("Query on " + uri + " failed:\n" + query + "\nError Message: '" + errorMessage + "'.\nRetrying in " + retryPause + " ms. (" + retries + "/" + retryCount + ")")
               }
               else
               {

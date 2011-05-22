@@ -27,7 +27,7 @@ object Silk
   /**
    * The directory the instance cache will be written to
    */
-  private var instanceCacheDir = new File("./instanceCache/")
+  private val instanceCacheDir = new File(System.getProperty("user.home") + "/.silk/instanceCache/")
 
   DefaultImplementations.register()
   DataSource.register(classOf[RdfDataSource])
@@ -122,8 +122,8 @@ object Silk
 
     //Create instance caches
     val caches = SourceTargetPair(
-        new FileInstanceCache(instanceSpecs.source, new File(instanceCacheDir + "/source/" + linkSpec.id + "/"), reload, config.blocking.map(_.blocks).getOrElse(1)),
-        new FileInstanceCache(instanceSpecs.target, new File(instanceCacheDir + "/target/" + linkSpec.id + "/"), reload, config.blocking.map(_.blocks).getOrElse(1))
+        new FileInstanceCache(instanceSpecs.source, new File(instanceCacheDir + "/" + linkSpec.id + "/source/"), reload, config.blocking.map(_.blocks).getOrElse(1)),
+        new FileInstanceCache(instanceSpecs.target, new File(instanceCacheDir + "/" + linkSpec.id + "/target/"), reload, config.blocking.map(_.blocks).getOrElse(1))
       )
 
     //Load instances into cache
