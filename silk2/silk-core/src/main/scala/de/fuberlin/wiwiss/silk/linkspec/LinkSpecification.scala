@@ -44,7 +44,6 @@ case class LinkSpecification(id : Identifier,
 object LinkSpecification
 {
   private val schemaLocation = "de/fuberlin/wiwiss/silk/linkspec/LinkSpecificationLanguage.xsd"
-  private val logger = Logger.getLogger(classOf[LinkSpecification].getName)
 
   def load(implicit prefixes : Prefixes) =
   {
@@ -211,7 +210,6 @@ object LinkSpecification
     val nameStr = node \ "@featureName" text
     val datatypeStr:String = node \ "@dataType" text
     val operators = readOperators(node.child)
-    logger.info("required="+requiredStr+", featureName="+nameStr+", dataType="+ datatypeStr + ", operators=" + operators)
     new OperatorFeature(
       nameStr,
       if (datatypeStr.isEmpty) "numeric" else datatypeStr,
@@ -230,7 +228,6 @@ object LinkSpecification
     val inputs = readInputs(
       node.child)
     val extractor = Extractor(node \ "@extractor" text, readParams(node))
-    logger.info("extractor feature created, featureName=" + nameStr)
     new ExtractorFeature(
       nameStr,
       if (datatypeStr.isEmpty) "numeric" else datatypeStr,
@@ -249,7 +246,6 @@ object LinkSpecification
     val metric = Metric(node \ "@metric" text, readParams(node))
     val debugLabel:String = node \  "@debugLabel" text
     val inputs = readInputs(node.child)
-    logger.info("read comparison: " + metric)
     new Comparison(
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
       if(weightStr.isEmpty) 1 else weightStr.toInt,
@@ -266,7 +262,6 @@ object LinkSpecification
     val weightStr = node \ "@weight" text
     val thresholdStr = node \ "@threshold" text
     val randomGenerator = RandomGenerator(node \ "@generator" text, readParams(node))
-    logger.info("read random generator: " + randomGenerator)
     new RandomOperator(
       if(requiredStr.isEmpty) false else requiredStr.toBoolean,
       if(weightStr.isEmpty) 1 else weightStr.toInt,
