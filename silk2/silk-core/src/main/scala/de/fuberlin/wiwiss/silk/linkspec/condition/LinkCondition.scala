@@ -2,7 +2,7 @@ package de.fuberlin.wiwiss.silk.linkspec.condition
 
 import de.fuberlin.wiwiss.silk.instance.Instance
 import de.fuberlin.wiwiss.silk.util.SourceTargetPair
-import xml.Elem
+import math.abs
 import de.fuberlin.wiwiss.silk.linkspec.input.{Transformer, TransformInput, PathInput, Input}
 import de.fuberlin.wiwiss.silk.config.Prefixes
 
