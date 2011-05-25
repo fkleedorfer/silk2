@@ -10,8 +10,9 @@ import net.liftweb.http.js.{JsCmd, JsCmds}
 import de.fuberlin.wiwiss.silk.workbench.workspace.User
 import net.liftweb.json.JsonAST.{JObject, JArray, JValue}
 import de.fuberlin.wiwiss.silk.datasource.DataSource
-import de.fuberlin.wiwiss.silk.workbench.lift.util.JavaScriptUtils
+import de.fuberlin.wiwiss.silk.workbench.lift.util.JS
 import net.liftweb.http.SHtml
+import net.liftweb.json.Printer.pretty
 
 /**
  * Workspace snippet.
@@ -47,6 +48,8 @@ class Workspace
 {
   def content(xhtml : NodeSeq) : NodeSeq =
   {
+    User().closeTask()
+
     bind("entry", xhtml,
          "injectedJavascript" -> (Script(Workspace.javasScriptFunctions)))
   }
@@ -128,7 +131,7 @@ object Workspace
     {
       User().project = User().workspace.project(projectName)
 
-      JavaScriptUtils.Redirect("project.xml")
+      JS.Redirect("project.xml")
     }
 
     val ajaxCall = SHtml.ajaxCall(JsRaw("projectName"), callback _)._2.cmd
@@ -224,7 +227,7 @@ object Workspace
    */
   private def editLinkingTaskFunction : JsCmd =
   {
-    def callback(args : String) : JsCmd = //JavaScriptUtils.Try("edit linking task")
+    def callback(args : String) : JsCmd = //JS.Try("edit linking task")
     {
       val Array(projectName, taskName) = args.split(',')
 
@@ -253,7 +256,7 @@ object Workspace
         User().project = User().workspace.project(projectName)
         User().task = User().project.linkingModule.task(taskName)
 
-        JavaScriptUtils.Redirect("linkSpec.html")
+        JS.Redirect("linkSpec.html")
       }
       catch
       {
@@ -307,7 +310,7 @@ object Workspace
     def closeTask() =
     {
       User().closeTask()
-      JavaScriptUtils.Empty
+      JS.Empty
     }
 
     JsCmds.Function("closeTask", Nil, SHtml.ajaxInvoke(closeTask)._2.cmd)

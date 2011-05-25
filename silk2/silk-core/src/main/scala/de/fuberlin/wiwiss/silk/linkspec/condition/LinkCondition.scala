@@ -46,16 +46,12 @@ case class LinkCondition(rootOperator : Option[Operator])
       {
         val indexes = operator.index(instance, threshold)
 
-        //Convert the index vectors to scalars
+        //Convert the index vectors to scalars in the range [0, Int.MaxValue]
         for(index <- indexes) yield
         {
-          //added abs to avoid negative index (which can happen in case of an Int overflow)
-          math.abs((index zip operator.blockCounts).foldLeft(0){case (iLeft, (iRight, blocks)) => {
-              var blocksToUse = blocks
-              if (blocksToUse == 0) blocksToUse=1;
-              iLeft * blocksToUse + iRight
-            }
-          })
+          val flatIndex = (index zip operator.blockCounts).foldLeft(0){case (iLeft, (iRight, blocks)) => iLeft * blocks + iRight}
+
+          if(flatIndex == Int.MinValue) 0 else abs(flatIndex)
         }
       }
       case None => Set.empty
