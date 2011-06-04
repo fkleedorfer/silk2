@@ -50,6 +50,12 @@ class EvaluationTask(user : User) extends Task[Unit]
     }
   }
 
+  def clear()
+  {
+    if(matchTask != null) matchTask.links.clear()
+    if(filteredLinks != null) filteredLinks.clear()
+  }
+
   override protected def execute()
   {
     val project = user.project
@@ -70,7 +76,7 @@ class EvaluationTask(user : User) extends Task[Unit]
 
     //Create tasks
     loadTask = new LoadTask(sources, caches, instanceSpecs, if(blockCount > 0) Some(blockingFunction _) else None)
-    matchTask = new MatchTask(linkingTask.linkSpec, caches, numThreads, generateDetailedLinks)
+    matchTask = new MatchTask(linkingTask.linkSpec, caches, numThreads, false, generateDetailedLinks)
     alignment = linkingTask.alignment
     filteredLinks = null
 
