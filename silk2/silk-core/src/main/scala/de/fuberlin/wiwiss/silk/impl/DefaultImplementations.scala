@@ -50,6 +50,7 @@ object DefaultImplementations
         SimilarityMeasure.register(classOf[GeographicDistanceMetric])
         SimilarityMeasure.register(classOf[JaccardSimilarity])
         SimilarityMeasure.register(classOf[DiceCoefficient])
+        SimilarityMeasure.register(classOf[TokenwiseStringSimilarity])
 
         Aggregator.register(classOf[AverageAggregator])
         Aggregator.register(classOf[MaximumAggregator])
