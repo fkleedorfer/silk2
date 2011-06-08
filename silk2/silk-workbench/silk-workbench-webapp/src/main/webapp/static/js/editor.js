@@ -173,8 +173,8 @@ function parseXML(xml, level, level_y, last_element, max_level, lastElementId)
     box1.addClass('dragDiv aggregateDiv');
     box1.attr("id", "aggregate_" + aggregatecounter);
 
-    var height = aggregatecounter * 120 + 120;
-    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    var height = aggregatecounter * 120 + 20;
+    var left = (max_level*250) - ((level + 1) * 250) + 20;
     box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
 
     var number = "#aggregate_" + aggregatecounter;
@@ -284,8 +284,8 @@ function parseXML(xml, level, level_y, last_element, max_level, lastElementId)
     box1.addClass('dragDiv compareDiv');
     box1.attr("id", "compare_" + comparecounter);
 
-    var height = comparecounter * 120 + 120;
-    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    var height = 2 * comparecounter * 120 + 20;
+    var left = (max_level*250) - ((level + 1) * 250) + 20;
     box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
 
     var number = "#compare_" + comparecounter;
@@ -398,8 +398,8 @@ function parseXML(xml, level, level_y, last_element, max_level, lastElementId)
     box1.addClass('dragDiv transformDiv');
     box1.attr("id", "transform_" + transformcounter);
 
-    var height = transformcounter * 120 + 120;
-    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    var height = transformcounter * 120 + 20;
+    var left = (max_level*250) - ((level + 1) * 250) + 20;
     box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
 
     var number = "#transform_" + transformcounter;
@@ -489,8 +489,8 @@ function parseXML(xml, level, level_y, last_element, max_level, lastElementId)
     box1.addClass('dragDiv sourcePath');
     box1.attr("id", "source_" + sourcecounter);
 
-    var height = sourcecounter * 120 + 120;
-    var left = (max_level*250) - ((level + 1) * 250) + 260;
+    var height = sourcecounter * 120 + 20;
+    var left = (max_level*250) - ((level + 1) * 250) + 20;
     box1.attr("style", "left: " + left + "px; top: " + height + "px; position: absolute;");
 
     var number = "#source_" + sourcecounter;
@@ -588,9 +588,6 @@ function load()
     */
 
     parseXML($(this), 0, 0, "", max_level, "");
-    if ((sourcecounter*120 + 20) > 800) {
-       $("#droppable").css( { "height": (sourcecounter*120 + 20) + "px" });
-    }
   });
   $(linkSpec).find("> LinkType").each(function ()
   {
@@ -692,7 +689,6 @@ function createNewElement(elementId)
 
 function serializeLinkSpec() {
   //alert (JSON.stringify(c));
-
   var c = jsPlumb.getConnections();
   if (c[jsPlumb.getDefaultScope()] !== undefined) {
     var connections = "";
@@ -717,7 +713,7 @@ function serializeLinkSpec() {
       }
     }
   }
-  // alert(connections + "\n\n" + root);
+  //alert(connections + "\n\n" + root);
   var xml = document.createElement("Interlink");
   xml.setAttribute("id", interlinkId);
 
@@ -745,7 +741,7 @@ function serializeLinkSpec() {
   xml.appendChild(targetDataset);
 
   var linkcondition = document.createElement("LinkCondition");
-  if (root != null)
+  if ((root != null) && (connections != ""))
   {
     linkcondition.appendChild(createNewElement(root));
   }
@@ -874,7 +870,7 @@ $(function ()
         var offset = $(number).offset();
         var scrollleft = $("#droppable").scrollLeft();
         var scrolltop = $("#droppable").scrollTop();
-        var top = offset.top-204+scrolltop+scrolltop;
+        var top = offset.top-206+scrolltop+scrolltop;
         var left = offset.left-502+scrollleft+scrollleft;
         $(number).attr("style", "left: " + left + "px; top: " + top +  "px; position: absolute;");
         jsPlumb.repaint(number);
@@ -1057,9 +1053,11 @@ function getPropertyPaths(deleteExisting)
       document.getElementById("paths").removeChild(document.getElementById("loading"));
 
     $(".restriction").show();
-    $("#sourcepaths, #targetpaths").css("height","98px");
+    $("#sourcepaths, #targetpaths").css("height","130px");
     $("#source_id").html(data.source.id);
     $("#source_restriction").html(data.source.restrictions);
+
+    if ($("#source_restriction").height()>18) $("#sourcepaths").css("height","112px");
 
     var list_item_id = 1;
 
@@ -1129,6 +1127,7 @@ function getPropertyPaths(deleteExisting)
 
     $("#target_id").html(data.target.id);
     $("#target_restriction").html(data.target.restrictions);
+    if ($("#target_restriction").height()>18) $("#targetpaths").css("height","112px");
 
     var list_item_id = 1;
 
