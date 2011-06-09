@@ -3,6 +3,7 @@ package de.fuberlin.wiwiss.silk.impl.metric
 import de.fuberlin.wiwiss.silk.util.strategy.StrategyAnnotation
 import java.util.regex.Pattern
 import de.fuberlin.wiwiss.silk.linkspec.condition.{SimpleSimilarityMeasure, SimilarityMeasure}
+import sun.font.TrueTypeFont
 
 /**
  * Similarity measure for strings. Strings are split into tokens and a similarity
@@ -34,6 +35,7 @@ import de.fuberlin.wiwiss.silk.linkspec.condition.{SimpleSimilarityMeasure, Simi
  */
 @StrategyAnnotation(id = "tokenwiseSimilarity", label = "Token-wise Similarity", description = "Token-wise string similarity using the specified metric")
 case class TokenwiseStringSimilarity(
+        ignoreCase: Boolean = true,
         metricName: String = "levenshtein",
         splitRegex: String =  "[\\s\\d\\p{Punct}]+",
         stopwords: String = "",
@@ -50,15 +52,15 @@ case class TokenwiseStringSimilarity(
     case _ => throw new IllegalArgumentException("unknown value '" + metricName +"' for parameter 'metricName', must be one of ['levenshtein', 'jaro', 'jaroWinkler')");
   }
 
-  private val stopwordsSet = stopwords.split("[,\\s]+").toSet
+  private val stopwordsSet = stopwords.split("[,\\s]+").map(x => if (ignoreCase) x.toLowerCase else x).toSet
 
   /**
    * Calculates a jaccard-like aggregation of string similarities of tokens. Order of tokens is not taken into account.
    */
   override def evaluate(string1: String, string2: String, threshold : Double) : Double =
   {
-    val words1 = string1.split(splitRegex).toArray
-    val words2 = string2.split(splitRegex).toArray
+    val words1 = string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
+    val words2 = string2.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
 
     var debug = true
     //evaluate metric for all pairs of words and create triple (score, wordIndex1, wordIndex2)
