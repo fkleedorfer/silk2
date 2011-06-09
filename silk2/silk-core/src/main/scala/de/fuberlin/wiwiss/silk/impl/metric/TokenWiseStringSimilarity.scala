@@ -62,7 +62,7 @@ case class TokenwiseStringSimilarity(
     val words1 = string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
     val words2 = string2.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
 
-    var debug = true
+    var debug = false
     //evaluate metric for all pairs of words and create triple (score, wordIndex1, wordIndex2)
     val scores = for (ind1 <- 0 to words1.size - 1; ind2 <- 0 to words2.size - 1) yield {
       (metric.evaluate(words1(ind1), words2(ind2), threshold), ind1, ind2)
