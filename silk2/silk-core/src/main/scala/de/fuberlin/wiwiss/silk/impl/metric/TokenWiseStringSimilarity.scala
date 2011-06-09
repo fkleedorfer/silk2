@@ -60,7 +60,7 @@ case class TokenwiseStringSimilarity(
     val words1 = string1.split(splitRegex).toArray
     val words2 = string2.split(splitRegex).toArray
 
-    var debug = false
+    var debug = true
     //evaluate metric for all pairs of words and create triple (score, wordIndex1, wordIndex2)
     val scores = for (ind1 <- 0 to words1.size - 1; ind2 <- 0 to words2.size - 1) yield {
       (metric.evaluate(words1(ind1), words2(ind2), threshold), ind1, ind2)
@@ -84,13 +84,13 @@ case class TokenwiseStringSimilarity(
 
     if (debug) println("string1: " + string1 +", words1=" + words1.mkString(","))
     if (debug) println("string2: " + string2 +", words2=" + words2.mkString(","))
-    if (debug) println(alignmentScores.map(x => (x._1, words1(x._2), words2(x._3) )).mkString("\n"))
+    if (debug) println("alignmentScores=" + alignmentScores.map(x => (x._1, words1(x._2), words2(x._3) )).mkString("\n"))
     //calculate score for each match: weight_of_word1 * weight_of_word2 * score, and sum
     //in the jaccard-like aggregation this is the 'intersection' of the two token sets
     val intersectionScore = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * t._1) //~jaccard intersection
     //now, calculate score not reached for each match: weight_of_word1 * weight_of_word2 * (2 - score)[= 1+(1-score)], and sum
     //in the jaccard-like aggregation this is the 'union' of the two token sets, where they are matched
-    val unionScoreForMatched = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * 2.0 *(1 - t._1)) //~ jaccard union wrt matches
+    val unionScoreForMatched = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * t._1 + (math.pow(getWeight(words1(t._2)),2) + math.pow(getWeight(words2(t._3)),2)) * ( 1.0 - t._1)) //~ jaccard union wrt matches
 
 
     //now calculate a penalty score for the words that weren't matched
@@ -99,13 +99,20 @@ case class TokenwiseStringSimilarity(
     if (debug) println("unmatched1: " + unmatchedWords1.mkString("\n"))
     val unmatchedWords2 = words2.indices.diff(alignmentScores.map[Int,Seq[Int]](x => x._3)).map(words2(_))
     if (debug) println("unmatched2: " + unmatchedWords2.mkString("\n"))
-    if (debug) println("scoreForMatched=" + intersectionScore)
+    if (debug) println("intersectionScore=" + intersectionScore)
+    if (debug) println("unionScoreForMatched=" + unionScoreForMatched)
+
     val unionScoreForUnmatched = unmatchedWords1.map(x => math.pow(getWeight(x),2)).sum + unmatchedWords2.map(x => math.pow(getWeight(x),2)).sum // ~jaccard union wrt unmatched words
+    if (debug) println("unionScoreForUnmatched=" + unionScoreForUnmatched)
     val unionScore = unionScoreForUnmatched + unionScoreForMatched
 
-    if (debug) println("missingScore=" + unionScore)
+    if (debug) println("unionScore=" + unionScore)
     if (debug) println(alignmentScores.mkString("\n"))
-    val score = intersectionScore / unionScore
+    val score = if (unionScore == 0.0){
+      1.0
+    } else {
+      intersectionScore / unionScore
+    }
     if (debug) println("score=" + score)
     score
   }
