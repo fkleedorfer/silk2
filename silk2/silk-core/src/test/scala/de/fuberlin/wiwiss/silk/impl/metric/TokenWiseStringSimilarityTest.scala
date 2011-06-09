@@ -30,10 +30,14 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
     }
 
     "TokenwiseStringSimilarity" should "return distance 0.0 (Anything,)" in
-      {
-          metric.evaluate("Anything", "", 0.0) should equal (0.0)
-          metric.evaluate("", "Anything", 0.0) should equal (0.0)
-      }
+    {
+        metric.evaluate("Anything", "", 0.0) should equal (0.0)
+        metric.evaluate("", "Anything", 0.0) should equal (0.0)
+    }
 
+    "TokenwiseStringSimilarity" should "return distance 0.999 (Hotel Hilton in Manhattan, hotel hilton manhattan)" in
+    {
+        metric.evaluate("Hotel Hilton in Manhattan", "hotel hilton manhattan", 0.0) should be (0.999 plusOrMinus 0.001)
+    }
 
 }
