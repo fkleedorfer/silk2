@@ -5,7 +5,7 @@ import org.scalatest.FlatSpec
 
 class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
 {
-    val metric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="and or in on the a from", nonStopwordWeight = 0.1, stopwordWeight=0.001)
+    val metric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="and or in on the a from thy", nonStopwordWeight = 0.1, stopwordWeight=0.001)
 
     "TokenwiseStringSimilarity" should "return distance 1 (several seditious scribes, several seditious scribes)" in
     {
@@ -40,4 +40,13 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
         metric.evaluate("Hotel Hilton in Manhattan", "hotel hilton manhattan", 0.0) should be (0.999 plusOrMinus 0.001)
     }
 
+    "TokenwiseStringSimilarity" should "return different distances for similar terms if stopwords are involved" in
+    {
+        //both of these are stopwords - match score is high
+        metric.evaluate("the", "thy", 0.0) should be (0.5 plusOrMinus 0.001)
+        //one of these is a stopword - match score is low
+        metric.evaluate("and", "any", 0.0) should be (0.0196 plusOrMinus 0.001)
+        //none of these is a stopword - match score is high
+        metric.evaluate("war", "was", 0.0) should be (0.5 plusOrMinus 0.001)
+    }
 }
