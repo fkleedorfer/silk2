@@ -18,7 +18,7 @@ import sun.font.TrueTypeFont
  *  sum over all similarities, i.e intersectionScore = Sum[over all matches](score)
  * The analogue figure of the set union size in the jaccard similarity is the sum of
  *  unmatched tokens in both token sets, plus the sum of the similarity score that was NOT attained
- *  for each matched token, i.e. unionScore = |unmatchedA| + |unmatchedB| + Sum[over all matches](2*(1-score))
+ *  for each matched token, i.e. unionScore = |unmatchedA| + |unmatchedB| + Sum[over all matches](score + 2*(1-score))
  * The final score is computed as intersectionScore / unionScore
  *
  * Tokens can be weighted individually (ideally using their IDF score in a corpus). The current
@@ -29,7 +29,7 @@ import sun.font.TrueTypeFont
  *
  * The similarity score of matched tokens is multiplied by the product of the token weights.
  *
- * The score calculated for unmatched tokens is the square of their weight.
+ * The score calculated for unmatched tokens (or score not attained, as in 1-score) is the square of their weight.
  *
  * @author Florian Kleedorfer, Research Studios Austria
  */
