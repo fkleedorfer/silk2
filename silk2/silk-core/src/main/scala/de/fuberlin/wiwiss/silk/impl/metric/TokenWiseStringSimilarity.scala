@@ -4,6 +4,34 @@ import de.fuberlin.wiwiss.silk.util.strategy.StrategyAnnotation
 import java.util.regex.Pattern
 import de.fuberlin.wiwiss.silk.linkspec.condition.{SimpleSimilarityMeasure, SimilarityMeasure}
 
+/**
+ * Similarity measure for strings. Strings are split into tokens and a similarity
+ * measure is applied to compare all tokens with each other. The comparison results
+ * are filtered such that no token appears in more than one comparison. The
+ * individual token comparisons are aggregated by a technique similar to
+ * the jaccard set similiarty in the following way:
+ *
+ * The sets to be compared are the token sets obtained from each string.
+ *
+ * The analogue figure of the set intersection size in the jaccard similarity is the
+ *  sum over all similarities, i.e intersectionScore = Sum[over all matches](score)
+ * The analogue figure of the set union size in the jaccard similarity is the sum of
+ *  unmatched tokens in both token sets, plus the sum of the similarity score that was NOT attained
+ *  for each matched token, i.e. unionScore = |unmatchedA| + |unmatchedB| + Sum[over all matches](2*(1-score))
+ * The final score is computed as intersectionScore / unionScore
+ *
+ * Tokens can be weighted individually (ideally using their IDF score in a corpus). The current
+ * implementation only allows for defining stopwords which are weighted differently from normal tokens,
+ * but the measure can easily be extended to use individual token weights.
+ *
+ * The weigths affects the score computation as follows:
+ *
+ * The similarity score of matched tokens is multiplied by the product of the token weights.
+ *
+ * The score calculated for unmatched tokens is the square of their weight.
+ *
+ * @author Florian Kleedorfer, Research Studios Austria
+ */
 @StrategyAnnotation(id = "tokenwiseSimilarity", label = "Token-wise Similarity", description = "Token-wise string similarity using the specified metric")
 case class TokenwiseStringSimilarity(
         metricName: String = "levenshtein",
@@ -62,7 +90,7 @@ case class TokenwiseStringSimilarity(
     val intersectionScore = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * t._1) //~jaccard intersection
     //now, calculate score not reached for each match: weight_of_word1 * weight_of_word2 * (2 - score)[= 1+(1-score)], and sum
     //in the jaccard-like aggregation this is the 'union' of the two token sets, where they are matched
-    val unionScoreForMatched = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * (2.0 - t._1)) //~ jaccard union wrt matches
+    val unionScoreForMatched = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * 2.0 *(1 - t._1)) //~ jaccard union wrt matches
 
 
     //now calculate a penalty score for the words that weren't matched
