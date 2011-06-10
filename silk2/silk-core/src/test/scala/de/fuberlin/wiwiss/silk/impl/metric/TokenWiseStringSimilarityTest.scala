@@ -55,4 +55,10 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
         //identical match containing stopwords:
         metric.evaluate("Mr John Doe", "Mr John Doe", 0.0) should equal (1.0)
     }
+
+    "TokenwiseStringSimilarity" should "return distance 0.5 (Hotel Hotel, Hotel)" in
+    {
+        //test if only one of two identical tokens is matched
+        metric.evaluate("Hotel Hotel", "Hotel", 0.0) should be (0.5 plusOrMinus 0.001)
+    }
 }
