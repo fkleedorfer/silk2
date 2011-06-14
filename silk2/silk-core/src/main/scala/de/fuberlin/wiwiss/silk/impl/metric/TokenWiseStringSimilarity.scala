@@ -36,6 +36,8 @@ import collection.immutable.LinearSeq
  *  <li>Unmatched tokens: unionScore += token-weight^2
  * </ul>
  *
+ * The parameter matchThreshold is used to disallow token matches below a certain threshold.
+ *
  * Ordering of tokens in both input strings can also be taken into account. The parameter orderingImpact defines the
  * impact ordering has on the final score. If orderingImpact > 0.0, the positions of the matched tokens are compared
  * using kendall's tau, which yields 1 for identical ordering and 0 for reverse ordering.
