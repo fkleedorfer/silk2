@@ -7,42 +7,56 @@ import sun.font.TrueTypeFont
 import collection.immutable.LinearSeq
 
 /**
+ * <p>
  * Similarity measure for strings. Strings are split into tokens and a similarity
  * measure is applied to compare all tokens with each other. The comparison results
  * are filtered such that no token appears in more than one comparison. The
  * individual token comparisons are aggregated by a technique similar to
  * the jaccard set similiarty in the following way:
+ * <p>
  *
+ * <p>
  * The sets to be compared are the token sets obtained from each string.
+ * </p>
  *
+ * <p>
  * The analogue figure of the set intersection size in the jaccard similarity is the
  *  sum over all similarities, i.e intersectionScore = Sum[over all matches](score)
  * The analogue figure of the set union size in the jaccard similarity is the sum of
  *  unmatched tokens in both token sets, plus the sum of the similarity score that was NOT attained
  *  for each matched token, i.e. unionScore = |unmatchedA| + |unmatchedB| + Sum[over all matches](score + 2*(1-score))
  * The final score is computed as intersectionScore / unionScore
+ * </p>
  *
+ * <p>
  * Tokens can be weighted individually (ideally using their IDF score in a corpus). The current
  * implementation only allows for defining stopwords which are weighted differently from normal tokens,
  * but the measure can easily be extended to use individual token weights.
+ * </p>
  *
- * The token weigths affects the score computation as follows:<br>
+ * <p>
+ * The token weights affect the score computation as follows:<br>
  * <ul>
  *  <li>Matched tokens:</li>
  *  <ul>
- *    <li>intersectionScore += token1-weight * token2-weight * match-score </li>
- *    <li>unionScore +=  token1-weight * token2-weight * match-score   +   (1-match-score) * (token1-weight^2 + token2-weight^2)
+ *    <li>intersectionScore += token1_weight * token2_weight * match_score </li>
+ *    <li>unionScore +=  token1_weight * token2_weight * match_score   +   (1 - match_score) * (token1_weight^2 + token2_weight^2) </li>
  *  </ul>
- *  <li>Unmatched tokens: unionScore += token-weight^2
+ *  <li>Unmatched tokens: unionScore += token_weight^2</li>
  * </ul>
+ * </p>
  *
+ * <p>
  * The parameter matchThreshold is used to disallow token matches below a certain threshold.
+ * </p>
  *
+ * <p>
  * Ordering of tokens in both input strings can also be taken into account. The parameter orderingImpact defines the
  * impact ordering has on the final score. If orderingImpact > 0.0, the positions of the matched tokens are compared
  * using kendall's tau, which yields 1 for identical ordering and 0 for reverse ordering.
  * The final score is computed as score * (1 - orderingImpact * (1 - tau)), which means that the maximum score for
  * input strings with tokens in exactly reverse order is 1 - orderingImpact
+ * </p>
  *
  * @author Florian Kleedorfer, Research Studios Austria
  */
