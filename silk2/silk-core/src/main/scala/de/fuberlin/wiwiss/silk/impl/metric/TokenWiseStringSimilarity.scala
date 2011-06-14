@@ -4,6 +4,7 @@ import de.fuberlin.wiwiss.silk.util.strategy.StrategyAnnotation
 import java.util.regex.Pattern
 import de.fuberlin.wiwiss.silk.linkspec.condition.{SimpleSimilarityMeasure, SimilarityMeasure}
 import sun.font.TrueTypeFont
+import collection.immutable.LinearSeq
 
 /**
  * Similarity measure for strings. Strings are split into tokens and a similarity
@@ -25,11 +26,21 @@ import sun.font.TrueTypeFont
  * implementation only allows for defining stopwords which are weighted differently from normal tokens,
  * but the measure can easily be extended to use individual token weights.
  *
- * The weigths affects the score computation as follows:
+ * The token weigths affects the score computation as follows:<br>
+ * <ul>
+ *  <li>Matched tokens:</li>
+ *  <ul>
+ *    <li>intersectionScore += token1-weight * token2-weight * match-score </li>
+ *    <li>unionScore +=  token1-weight * token2-weight * match-score   +   (1-match-score) * (token1-weight^2 + token2-weight^2)
+ *  </ul>
+ *  <li>Unmatched tokens: unionScore += token-weight^2
+ * </ul>
  *
- * The similarity score of matched tokens is multiplied by the product of the token weights.
- *
- * The score calculated for unmatched tokens (or score not attained, as in 1-score) is the square of their weight.
+ * Ordering of tokens in both input strings can also be taken into account. The parameter orderingImpact defines the
+ * impact ordering has on the final score. If orderingImpact > 0.0, the positions of the matched tokens are compared
+ * using kendall's tau, which yields 1 for identical ordering and 0 for reverse ordering.
+ * The final score is computed as score * (1 - orderingImpact * (1 - tau)), which means that the maximum score for
+ * input strings with tokens in exactly reverse order is 1 - orderingImpact
  *
  * @author Florian Kleedorfer, Research Studios Austria
  */
@@ -40,9 +51,15 @@ case class TokenwiseStringSimilarity(
         splitRegex: String =  "[\\s\\d\\p{Punct}]+",
         stopwords: String = "",
         stopwordWeight: Double = 0.01,
-        nonStopwordWeight: Double = 0.1
+        nonStopwordWeight: Double = 0.1,
+        matchThreshold: Double = 0.0,
+        orderingImpact: Double = 0.0
         ) extends SimpleSimilarityMeasure
 {
+  require(stopwordWeight >= 0.0 && stopwordWeight <= 1.0, "stopwordWeight must be in [0,1]")
+  require(nonStopwordWeight >= 0.0 && nonStopwordWeight <= 1.0, "nonStopwordWeight must be in [0,1]")
+  require(matchThreshold >= 0.0 && matchThreshold <= 1.0, "matchThreshold must be in [0,1]")
+  require(orderingImpact >= 0.0 && orderingImpact <= 1.0, "different must be in [0,1]")
   private val splitPattern = Pattern.compile(splitRegex)
 
   private val metric = metricName match {
@@ -65,7 +82,8 @@ case class TokenwiseStringSimilarity(
     var debug = false
     //evaluate metric for all pairs of words and create triple (score, wordIndex1, wordIndex2)
     val scores = for (ind1 <- 0 to words1.size - 1; ind2 <- 0 to words2.size - 1) yield {
-      (metric.evaluate(words1(ind1), words2(ind2), threshold), ind1, ind2)
+      val score = metric.evaluate(words1(ind1), words2(ind2), threshold)
+      (if (score >= matchThreshold) score else 0.0, ind1, ind2)
     }
     //now sort by score
     val sortedScores= scores.sortBy(t => -t._1)
@@ -79,8 +97,12 @@ case class TokenwiseStringSimilarity(
         //one of the words in the current comparison has already been selected, so we can't add it to the result
         triples
       } else {
-        //none of the words in the current comparison has been matched so far, add it
-        triple +: triples
+        //none of the words in the current comparison has been matched so far, add it if it has score > 0
+        if (triple._1 > 0.0) {
+          triple +: triples
+        } else {
+          triples
+        }
       }
     })
 
@@ -116,7 +138,19 @@ case class TokenwiseStringSimilarity(
       intersectionScore / unionScore
     }
     if (debug) println("score=" + score)
-    score
+    if (orderingImpact > 0.0 && alignmentScores.size > 0) {
+      val matchIndices1 = alignmentScores.map(_._2).zipWithIndex.sortBy(x => -x._1).map(_._2)
+      val matchIndices2 = alignmentScores.map(_._3).zipWithIndex.sortBy(x => -x._1).map(_._2)
+      if (debug) println("matchIndices1=" + matchIndices1.mkString(","))
+      if (debug) println("matchIndices2=" + matchIndices2.mkString(","))
+      val tau = kendallsTau(matchIndices1, matchIndices2)
+      if (debug) println("tau=" + tau)
+      val scoreWithOrdering = score * (1 - orderingImpact * ( 1 - tau))
+      if (debug) println("scoreWithOrdering=" + scoreWithOrdering)
+      scoreWithOrdering
+    } else {
+      score
+    }
   }
 
 
@@ -133,5 +167,25 @@ case class TokenwiseStringSimilarity(
       nonStopwordWeight
     }
   }
+
+  /**
+   * Vanilla implementation of kendall's tau with complexity O(n^2)
+   */
+  def kendallsTau(seq1: Seq[Int], seq2: Seq[Int]): Double =
+  {
+    require(seq1.size == seq2.size, "for calculating kendall's tau, the sequences must be of equal size")
+    if (seq1.size == 1) return 1.0
+    val arr1 = seq1.toArray
+    val arr2 = seq2.toArray
+    val numerator = (for (i <- 0 to arr1.size -1 ; j <- 0 to i-1) yield {
+      if (math.signum(arr1(i) - arr1(j)) == math.signum(arr2(i) - arr2(j))){
+        1.0
+      } else {
+        0.0
+      }
+    }).sum
+    numerator / (0.5 * (arr1.size * (arr1.size -1)))
+  }
+
 }
 

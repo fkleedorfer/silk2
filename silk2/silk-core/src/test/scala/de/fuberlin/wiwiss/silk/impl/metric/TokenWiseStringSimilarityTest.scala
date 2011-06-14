@@ -12,6 +12,12 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
         metric.evaluate("several seditious scribes", "several seditious scribes", 0.0) should equal (1)
     }
 
+    "TokenwiseStringSimilarity" should "return distance 1 (several seditious scribes, scribes seditious several)" in
+    {
+        metric.evaluate("several seditious scribes", "scribes seditious several", 0.0) should equal (1)
+    }
+
+
     "TokenwiseStringSimilarity" should "return distance 0.749 (several seditious scribes, several seditious scribes from caesarea)" in
     {
         metric.evaluate("several seditious scribes", "several seditious scribes from caesarea", 0.0) should be (0.749 plusOrMinus 0.001)
@@ -60,5 +66,18 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
     {
         //test if only one of two identical tokens is matched
         metric.evaluate("Hotel Hotel", "Hotel", 0.0) should be (0.5 plusOrMinus 0.001)
+    }
+
+    "TokenwiseStringSimilarity" should "return distance 0.5 (several seditious scribes, scribes seditious several) with orderingImpact of 0.5" in
+    {
+        val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="and or in on the a from thy mr mrs", nonStopwordWeight = 0.1, stopwordWeight=0.001, orderingImpact = 0.5)
+        myMetric.evaluate("several seditious scribes", "scribes seditious several", 0.0) should equal (0.5)
+    }
+
+    "TokenwiseStringSimilarity" should "return different distances for when matchThreshold is used (several seditious scribes, several sedated scribes)" in
+    {
+        val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="and or in on the a from thy mr mrs", nonStopwordWeight = 0.1, stopwordWeight=0.001, matchThreshold = 0.85)
+        metric.evaluate("several seditious scribes", "several sedated scribes", 0.0) should be (0.687 plusOrMinus 0.001)
+        myMetric.evaluate("several seditious scribes", "several sedated scribes", 0.0) should be (0.5 plusOrMinus 0.001)
     }
 }
