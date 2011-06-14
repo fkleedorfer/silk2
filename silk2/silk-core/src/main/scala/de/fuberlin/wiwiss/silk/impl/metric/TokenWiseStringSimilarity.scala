@@ -61,7 +61,7 @@ case class TokenwiseStringSimilarity(
   require(stopwordWeight >= 0.0 && stopwordWeight <= 1.0, "stopwordWeight must be in [0,1]")
   require(nonStopwordWeight >= 0.0 && nonStopwordWeight <= 1.0, "nonStopwordWeight must be in [0,1]")
   require(matchThreshold >= 0.0 && matchThreshold <= 1.0, "matchThreshold must be in [0,1]")
-  require(orderingImpact >= 0.0 && orderingImpact <= 1.0, "different must be in [0,1]")
+  require(orderingImpact >= 0.0 && orderingImpact <= 1.0, "orderingImpact must be in [0,1]")
   private val splitPattern = Pattern.compile(splitRegex)
 
   private val metric = metricName match {
