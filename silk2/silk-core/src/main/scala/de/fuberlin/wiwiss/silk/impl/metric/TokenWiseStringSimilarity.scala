@@ -140,7 +140,7 @@ case class TokenwiseStringSimilarity(
       intersectionScore / unionScore
     }
     if (debug) println("score=" + score)
-    if (orderingImpact > 0.0 && alignmentScores.size > 0) {
+    if (orderingImpact > 0.0 && alignmentScores.size > 1) {
       val matchIndices1 = alignmentScores.map(_._2).zipWithIndex.sortBy(x => -x._1).map(_._2)
       val matchIndices2 = alignmentScores.map(_._3).zipWithIndex.sortBy(x => -x._1).map(_._2)
       if (debug) println("matchIndices1=" + matchIndices1.mkString(","))
