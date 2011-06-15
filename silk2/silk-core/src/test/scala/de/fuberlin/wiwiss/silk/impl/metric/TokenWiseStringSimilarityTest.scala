@@ -83,4 +83,10 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
         metric.evaluate("several seditious scribes", "several sedated scribes", 0.0) should be (0.687 plusOrMinus 0.001)
         myMetric.evaluate("several seditious scribes", "several sedated scribes", 0.0) should be (0.5 plusOrMinus 0.001)
     }
+
+    "TokenwiseStringSimilarity" should "return 1.0 in (Sirenia + Niobeth, ould Sirenia and for Niobeth) with special settings" in
+    {
+        val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="and for ould", nonStopwordWeight = 1.0, stopwordWeight=0.0)
+        myMetric.evaluate("Sirenia + Niobeth", "ould Sirenia and for Niobeth", 0.0) should equal(1.0)
+    }
 }
