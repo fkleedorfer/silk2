@@ -5,6 +5,7 @@ import java.util.regex.Pattern
 import de.fuberlin.wiwiss.silk.linkspec.condition.{SimpleSimilarityMeasure, SimilarityMeasure}
 import sun.font.TrueTypeFont
 import collection.immutable.LinearSeq
+import javax.management.remote.rmi._RMIConnection_Stub
 
 /**
  * <p>
@@ -92,57 +93,112 @@ case class TokenwiseStringSimilarity(
    */
   override def evaluate(string1: String, string2: String, threshold : Double) : Double =
   {
-    val words1 = string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
-    val words2 = string2.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
-
+    // generate array of tokens
+    val tokens1 = string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
+    val tokens2 = string2.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
+    // store weight for each token in array
+    val weights1 = (for (token <- tokens1) yield getWeight(token)).toArray
+    val weights2 = (for (token <- tokens2) yield getWeight(token)).toArray
     var debug = false
-    //evaluate metric for all pairs of words and create triple (score, wordIndex1, wordIndex2)
-    val scores = for (ind1 <- 0 to words1.size - 1; ind2 <- 0 to words2.size - 1) yield {
-      val score = metric.evaluate(words1(ind1), words2(ind2), threshold)
-      (if (score >= matchThreshold) score else 0.0, ind1, ind2)
+    //evaluate metric for all pairs of tokens and create triple (score, wordIndex1, wordIndex2)
+    val scores = for (ind1 <- 0 to tokens1.size - 1; ind2 <- 0 to tokens2.size - 1; score = metric.evaluate(tokens1(ind1), tokens2(ind2), threshold) if score >= matchThreshold) yield {
+      (score, ind1, ind2)
     }
     //now sort by score
     val sortedScores= scores.sortBy(t => -t._1)
+    if (debug) println ("sorted scores: " + sortedScores.mkString(","))
+    //
+    val matchedTokens1 = new Array[Boolean](tokens1.size)
+    val matchedTokens2 = new Array[Boolean](tokens2.size)
+    var matchedCount1 = 0
+    var matchedCount2 = 0
+    var lastScore = 1.0
 
-    //now select only the highest score for each word
-    val alignmentScores = sortedScores.foldLeft[Seq[Triple[Double,Int,Int]]](Seq.empty)((triples, triple) => {
-      //check if we can add the current triple or not
-      if (triples.size == 0) {
-        Seq(triple)
-      } else if (triples.exists(x => x._2 == triple._2 || x._3 == triple._3)) {
-        //one of the words in the current comparison has already been selected, so we can't add it to the result
-        triples
-      } else {
-        //none of the words in the current comparison has been matched so far, add it if it has score > 0
-        if (triple._1 > 0.0) {
-          triple +: triples
-        } else {
-          triples
-        }
+    //optimized version of the match calculation:
+    // select best matches, only one match for each token
+    val alignmentScores =
+      for (triple <- sortedScores if
+         matchedCount1 < tokens1.size &&
+         matchedCount2 < tokens2.size &&
+         lastScore > 0.0 &&
+         matchedTokens1(triple._2) == false &&
+         matchedTokens2(triple._3) == false)
+      yield
+      {
+        lastScore = triple._1
+        matchedTokens1(triple._2) = true
+        matchedTokens2(triple._3) = true
+        matchedCount1 += 1
+        matchedCount2 += 1
+        triple
       }
-    })
 
-    if (debug) println("string1: " + string1 +", words1=" + words1.mkString(","))
-    if (debug) println("string2: " + string2 +", words2=" + words2.mkString(","))
-    if (debug) println("alignmentScores=" + alignmentScores.map(x => (x._1, words1(x._2), words2(x._3) )).mkString("\n"))
+/////  original computation of alignmentScores, slightly slower with longer strings (~10-15% for 2 strings with about 25 words)
+//    //now select only the highest score for each word
+//    val alignmentScores = sortedScores.foldLeft[Seq[Triple[Double,Int,Int]]](Seq.empty)((triples, triple) => {
+//      //check if we can add the current triple or not
+//      if (triples.size == 0) {
+//        Seq(triple)
+//      } else if (triples.exists(x => x._2 == triple._2 || x._3 == triple._3)) {
+//        //one of the words in the current comparison has already been selected, so we can't add it to the result
+//        triples
+//      } else {
+//        //none of the words in the current comparison has been matched so far, add it if it has score > 0
+//        if (triple._1 > 0.0) {
+//          triple +: triples
+//        } else {
+//          triples
+//        }
+//      }
+//    })
+
+    if (debug) println("string1: " + string1 +", words1=" + tokens1.mkString(","))
+    if (debug) println("string2: " + string2 +", words2=" + tokens2.mkString(","))
+    if (debug) println("alignmentScores=" + alignmentScores.map(x => (x._1, tokens1(x._2), tokens2(x._3) )).mkString("\n"))
+
     //calculate score for each match: weight_of_word1 * weight_of_word2 * score, and sum
     //in the jaccard-like aggregation this is the 'intersection' of the two token sets
-    val intersectionScore = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * t._1) //~jaccard intersection
-    //now, calculate score not reached for each match: weight_of_word1 * weight_of_word2 * (2 - score)[= 1+(1-score)], and sum
+    var intersectionScore = 0.0
+    //calculate score not reached for each match: weight_of_word1 * weight_of_word2 * (2 - score)[= 1+(1-score)], and sum
     //in the jaccard-like aggregation this is the 'union' of the two token sets, where they are matched
-    val unionScoreForMatched = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * t._1 + (math.pow(getWeight(words1(t._2)),2) + math.pow(getWeight(words2(t._3)),2)) * ( 1.0 - t._1)) //~ jaccard union wrt matches
+    var unionScoreForMatched = 0.0
+    for (alignmentScore <- alignmentScores) {
+      val weight1 = weights1(alignmentScore._2)
+      val weight2 = weights2(alignmentScore._3)
+      val tmpIntersectionScore = weight1 * weight2 * alignmentScore._1 //~jaccard intersection
+      intersectionScore += tmpIntersectionScore
+      unionScoreForMatched += tmpIntersectionScore + (math.pow(weight1,2) + math.pow(weight2,2)) * ( 1.0 - alignmentScore._1 ) //~ jaccard union wrt matches
+    }
+////// original calculation of intersectionScore and unionScoreForMatched
+//    //calculate score for each match: weight_of_word1 * weight_of_word2 * score, and sum
+//    //in the jaccard-like aggregation this is the 'intersection' of the two token sets
+//    val intersectionScore = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * t._1) //~jaccard intersection
+//    //now, calculate score not reached for each match: weight_of_word1 * weight_of_word2 * (2 - score)[= 1+(1-score)], and sum
+//    //in the jaccard-like aggregation this is the 'union' of the two token sets, where they are matched
+//    val unionScoreForMatched = alignmentScores.foldLeft[Double](0)((sum,t) => sum + getWeight(words1(t._2)) * getWeight(words2(t._3)) * t._1 + (math.pow(getWeight(words1(t._2)),2) + math.pow(getWeight(words2(t._3)),2)) * ( 1.0 - t._1)) //~ jaccard union wrt matches
 
 
     //now calculate a penalty score for the words that weren't matched
     //in the jaccard-like aggregation, this is the 'union' of the two token sets where they are not matched
-    val unmatchedWords1 = words1.indices.diff(alignmentScores.map[Int,Seq[Int]](x => x._2)).map(words1(_))
-    if (debug) println("unmatched1: " + unmatchedWords1.mkString("\n"))
-    val unmatchedWords2 = words2.indices.diff(alignmentScores.map[Int,Seq[Int]](x => x._3)).map(words2(_))
-    if (debug) println("unmatched2: " + unmatchedWords2.mkString("\n"))
+
+
+    val unmatchedIndices1 = matchedTokens1.zipWithIndex.filter(!_._1).map(_._2)
+    val unmatchedIndices2 = matchedTokens2.zipWithIndex.filter(!_._1).map(_._2)
+    val unionScoreForUnmatched = unmatchedIndices1.map(x => math.pow(weights1(x),2)).sum + unmatchedIndices2.map(x => math.pow(weights2(x),2)).sum // ~jaccard union wrt unmatched words
+
+    if (debug) println("matchedTokens1 = " + matchedTokens1.mkString(","))
+    if (debug) println("unmatchedIndices1 = " + unmatchedIndices1.mkString(","))
+
+
+///// original calculation of unionScoreForUnmatched
+//    val unmatchedWords1 = words1.indices.diff(alignmentScores.map[Int,Seq[Int]](x => x._2)).map(words1(_))
+//    if (debug) println("unmatched1: " + unmatchedWords1.mkString("\n"))
+//    val unmatchedWords2 = words2.indices.diff(alignmentScores.map[Int,Seq[Int]](x => x._3)).map(words2(_))
+//    if (debug) println("unmatched2: " + unmatchedWords2.mkString("\n"))
+//val unionScoreForUnmatched = unmatchedWords1.map(x => math.pow(getWeight(x),2)).sum + unmatchedWords2.map(x => math.pow(getWeight(x),2)).sum // ~jaccard union wrt unmatched words
+
     if (debug) println("intersectionScore=" + intersectionScore)
     if (debug) println("unionScoreForMatched=" + unionScoreForMatched)
-
-    val unionScoreForUnmatched = unmatchedWords1.map(x => math.pow(getWeight(x),2)).sum + unmatchedWords2.map(x => math.pow(getWeight(x),2)).sum // ~jaccard union wrt unmatched words
     if (debug) println("unionScoreForUnmatched=" + unionScoreForUnmatched)
     val unionScore = unionScoreForUnmatched + unionScoreForMatched
 

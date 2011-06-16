@@ -89,4 +89,23 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
         val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="and for ould", nonStopwordWeight = 1.0, stopwordWeight=0.0)
         myMetric.evaluate("Sirenia + Niobeth", "ould Sirenia and for Niobeth", 0.0) should equal(1.0)
     }
+
+
+////// test for metric timing
+//    "TokenwiseStringSimilarity" should "return 1.0 in (The expansion of chains like Abercrombie and Gap to Europe is based on a major shift in how young Europeans think about American fashion. , The expansion of chains like Gap and Abercrombie to Europe is fueled by a major shift in how young Europeans think about American fashion. ) with special settings" in
+//    {
+//        val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="and or in on the a from thy mr mrs",nonStopwordWeight = 0.1, stopwordWeight=0.001, orderingImpact = 0.2)
+//        var time = System.nanoTime();
+//        for (i <- 1 to 1000) {
+//          myMetric.evaluate("The expansion of chains like Abercrombie and Gap to Europe is based on a major shift in how young Europeans think about American fashion.", "The expansion of chains like Gap and Abercrombie to Europe is fueled by a major shift in how young Europeans think about American fashion.", 0.0)
+//        }
+//        println("comparison of long strings took " +  ((System.nanoTime() - time).toDouble / 1000000.0) + " + millis")
+//
+//        time = System.nanoTime();
+//        for (i <- 1 to 1000) {
+//          myMetric.evaluate("Sirenia + Niobeth", "ould Sirenia and for Niobeth", 0.0)
+//        }
+//        println("comparison of short strings took " +  ((System.nanoTime() - time).toDouble / 1000000.0) + " + millis")
+//
+//    }
 }
