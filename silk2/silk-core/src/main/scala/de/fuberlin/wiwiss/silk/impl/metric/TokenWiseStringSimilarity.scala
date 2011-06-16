@@ -6,6 +6,7 @@ import de.fuberlin.wiwiss.silk.linkspec.condition.{SimpleSimilarityMeasure, Simi
 import sun.font.TrueTypeFont
 import collection.immutable.LinearSeq
 import javax.management.remote.rmi._RMIConnection_Stub
+import java.lang.Boolean
 
 /**
  * <p>
@@ -59,6 +60,11 @@ import javax.management.remote.rmi._RMIConnection_Stub
  * input strings with tokens in exactly reverse order is 1 - orderingImpact
  * </p>
  *
+ * <p>
+ * If adjustByTokenLength is set to true, each token weight is multiplied by its length relative to the length of the
+ * longest token in the input string, i.e, token_weight = token_weight * token_length / max_token_length_in_input_string.
+ * <p>
+ *
  * @author Florian Kleedorfer, Research Studios Austria
  */
 @StrategyAnnotation(id = "tokenwiseSimilarity", label = "Token-wise Similarity", description = "Token-wise string similarity using the specified metric")
@@ -70,7 +76,8 @@ case class TokenwiseStringSimilarity(
         stopwordWeight: Double = 0.01,
         nonStopwordWeight: Double = 0.1,
         matchThreshold: Double = 0.0,
-        orderingImpact: Double = 0.0
+        orderingImpact: Double = 0.0,
+        adjustByTokenLength: Boolean = false
         ) extends SimpleSimilarityMeasure
 {
   require(stopwordWeight >= 0.0 && stopwordWeight <= 1.0, "stopwordWeight must be in [0,1]")
@@ -93,14 +100,24 @@ case class TokenwiseStringSimilarity(
    */
   override def evaluate(string1: String, string2: String, threshold : Double) : Double =
   {
-    // generate array of tokens
-    val tokens1 = string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
-    val tokens2 = string2.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).toArray
-    // store weight for each token in array
-    val weights1 = (for (token <- tokens1) yield getWeight(token)).toArray
-    val weights2 = (for (token <- tokens2) yield getWeight(token)).toArray
     var debug = false
-    //evaluate metric for all pairs of tokens and create triple (score, wordIndex1, wordIndex2)
+    // generate array of tokens
+    val tokens1 = string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).filter(_.length > 0).toArray
+    val tokens2 = string2.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).filter(_.length > 0).toArray
+
+    if (debug) println("string1: " + string1 +", words1=" + tokens1.mkString("'","','","'"))
+    if (debug) println("string2: " + string2 +", words2=" + tokens2.mkString("'","','","'"))
+
+    if (tokens1.isEmpty || tokens2.isEmpty) return 0.0
+    // store weight for each token in array
+    var weights1 = (for (token <- tokens1) yield getWeight(token)).toArray
+    var weights2 = (for (token <- tokens2) yield getWeight(token)).toArray
+    if (adjustByTokenLength) {
+      weights1 = adjustWeightsByTokenLengths(weights1, tokens1)
+      weights2 = adjustWeightsByTokenLengths(weights2, tokens2)
+    }
+
+    //evaluate metric for all pairs of tokens and create triple (score, tokenIndex1, tokenIndex2)
     val scores = for (ind1 <- 0 to tokens1.size - 1; ind2 <- 0 to tokens2.size - 1; score = metric.evaluate(tokens1(ind1), tokens2(ind2), threshold) if score >= matchThreshold) yield {
       (score, ind1, ind2)
     }
@@ -108,8 +125,8 @@ case class TokenwiseStringSimilarity(
     val sortedScores= scores.sortBy(t => -t._1)
     if (debug) println ("sorted scores: " + sortedScores.mkString(","))
     //
-    val matchedTokens1 = new Array[Boolean](tokens1.size)
-    val matchedTokens2 = new Array[Boolean](tokens2.size)
+    val matchedTokens1 = Array.fill(tokens1.size)(false)
+    val matchedTokens2 = Array.fill(tokens2.size)(false)
     var matchedCount1 = 0
     var matchedCount2 = 0
     var lastScore = 1.0
@@ -152,8 +169,6 @@ case class TokenwiseStringSimilarity(
 //      }
 //    })
 
-    if (debug) println("string1: " + string1 +", words1=" + tokens1.mkString(","))
-    if (debug) println("string2: " + string2 +", words2=" + tokens2.mkString(","))
     if (debug) println("alignmentScores=" + alignmentScores.map(x => (x._1, tokens1(x._2), tokens2(x._3) )).mkString("\n"))
 
     //calculate score for each match: weight_of_word1 * weight_of_word2 * score, and sum
@@ -180,8 +195,6 @@ case class TokenwiseStringSimilarity(
 
     //now calculate a penalty score for the words that weren't matched
     //in the jaccard-like aggregation, this is the 'union' of the two token sets where they are not matched
-
-
     val unmatchedIndices1 = matchedTokens1.zipWithIndex.filter(!_._1).map(_._2)
     val unmatchedIndices2 = matchedTokens2.zipWithIndex.filter(!_._1).map(_._2)
     val unionScoreForUnmatched = unmatchedIndices1.map(x => math.pow(weights1(x),2)).sum + unmatchedIndices2.map(x => math.pow(weights2(x),2)).sum // ~jaccard union wrt unmatched words
@@ -225,6 +238,13 @@ case class TokenwiseStringSimilarity(
     }
   }
 
+  def adjustWeightsByTokenLengths(weights: Array[Double], tokens: Array[String]): Array[Double] =
+  {
+    val tokenLengths = tokens.map(_.length)
+    val totalLength = tokenLengths.max
+    val relativeLengths = tokenLengths.map(x => x.toDouble / totalLength.toDouble)
+    weights.zip(relativeLengths).map(x => x._1 * x._2)
+  }
 
   /**
    * Returns the weight associated with a token.
