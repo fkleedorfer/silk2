@@ -6,7 +6,7 @@ import de.fuberlin.wiwiss.silk.linkspec.condition.{SimpleSimilarityMeasure, Simi
 import sun.font.TrueTypeFont
 import collection.immutable.LinearSeq
 import javax.management.remote.rmi._RMIConnection_Stub
-import java.lang.Boolean
+
 
 /**
  * <p>
@@ -98,12 +98,16 @@ case class TokenwiseStringSimilarity(
   /**
    * Calculates a jaccard-like aggregation of string similarities of tokens. Order of tokens is not taken into account.
    */
+  def tokenize(string1: String): Array[String] = {
+    string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).filter(_.length > 0).toArray
+  }
+
   override def evaluate(string1: String, string2: String, threshold : Double) : Double =
   {
     var debug = false
     // generate array of tokens
-    val tokens1 = string1.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).filter(_.length > 0).toArray
-    val tokens2 = string2.split(splitRegex).map(x => if (ignoreCase) x.toLowerCase else x).filter(_.length > 0).toArray
+    val tokens1 = tokenize(string1)
+    val tokens2 = tokenize(string2)
 
     if (debug) println("string1: " + string1 +", words1=" + tokens1.mkString("'","','","'"))
     if (debug) println("string2: " + string2 +", words2=" + tokens2.mkString("'","','","'"))
@@ -112,6 +116,7 @@ case class TokenwiseStringSimilarity(
     // store weight for each token in array
     var weights1 = (for (token <- tokens1) yield getWeight(token)).toArray
     var weights2 = (for (token <- tokens2) yield getWeight(token)).toArray
+
     if (adjustByTokenLength) {
       weights1 = adjustWeightsByTokenLengths(weights1, tokens1)
       weights2 = adjustWeightsByTokenLengths(weights2, tokens2)
@@ -285,6 +290,22 @@ case class TokenwiseStringSimilarity(
     }).sum
     numerator / (0.5 * (arr1.size * (arr1.size -1)))
   }
+
+  /**
+   * Very simple indexing function that requires at least one common token in strings for them to
+   * be compared
+   */
+  override def index(value : String, threshold : Double = 0.0) : Set[Seq[Int]] = {
+    val tokens = tokenize(value)
+    if (tokens.isEmpty) {
+      Set(Seq(0))
+    } else {
+      Set(tokens.map(_.hashCode % blockCounts.head).toSeq)
+    }
+  }
+
+
+  override val blockCounts : Seq[Int] = Seq(1000)
 
 }
 
