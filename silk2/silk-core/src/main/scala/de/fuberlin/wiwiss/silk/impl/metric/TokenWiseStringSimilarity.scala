@@ -31,12 +31,6 @@ import javax.management.remote.rmi._RMIConnection_Stub
  * </p>
  *
  * <p>
- * Tokens can be weighted individually (ideally using their IDF score in a corpus). The current
- * implementation only allows for defining stopwords which are weighted differently from normal tokens,
- * but the measure can easily be extended to use individual token weights.
- * </p>
- *
- * <p>
  * The token weights affect the score computation as follows:<br>
  * <ul>
  *  <li>Matched tokens:</li>
@@ -46,6 +40,12 @@ import javax.management.remote.rmi._RMIConnection_Stub
  *  </ul>
  *  <li>Unmatched tokens: unionScore += token_weight^2</li>
  * </ul>
+ * </p>
+ *
+ * <p>
+ * The parameter useIncrementalIdfWeights allows the user to activate collecting token counts and using them for calculating the
+ * IDF token weight. If this feature is active, the parameters nonStopwordWeight and stopwordWeight are used as upper
+ * bounds for the token weights
  * </p>
  *
  * <p>
@@ -75,6 +75,7 @@ case class TokenwiseStringSimilarity(
         stopwords: String = "",
         stopwordWeight: Double = 0.01,
         nonStopwordWeight: Double = 0.1,
+        useIncrementalIdfWeights:Boolean = false,
         matchThreshold: Double = 0.0,
         orderingImpact: Double = 0.0,
         adjustByTokenLength: Boolean = false
@@ -92,6 +93,9 @@ case class TokenwiseStringSimilarity(
     case "jaroWinkler" => new JaroWinklerSimilarity()
     case _ => throw new IllegalArgumentException("unknown value '" + metricName +"' for parameter 'metricName', must be one of ['levenshtein', 'jaro', 'jaroWinkler')");
   }
+
+  private val documentFrequencies = scala.collection.mutable.Map[String, Int]()
+  private var documentCount = 0
 
   private val stopwordsSet = stopwords.split("[,\\s]+").map(x => if (ignoreCase) x.toLowerCase else x).toSet
 
@@ -265,6 +269,22 @@ case class TokenwiseStringSimilarity(
    */
   def getWeight(token: String): Double =
   {
+    val fixedWeight = getFixedWeight(token)
+    if (!useIncrementalIdfWeights) {
+      fixedWeight
+    } else {
+      val docFreq = documentFrequencies.getOrElse(token,0)
+      if (docFreq == 0) {
+        fixedWeight
+      } else {
+        val weight = math.log(documentCount/docFreq.toDouble)
+        math.min(fixedWeight,weight)
+      }
+    }
+  }
+
+  def getFixedWeight(token: String):Double =
+  {
     if (stopwordsSet(token)){
       stopwordWeight
     } else {
@@ -300,6 +320,12 @@ case class TokenwiseStringSimilarity(
     if (tokens.isEmpty) {
       Set(Seq(0))
     } else {
+      if (useIncrementalIdfWeights){
+        documentCount += 1
+        for (token <- tokens.distinct) {
+          documentFrequencies.put(token, documentFrequencies.getOrElse(token,0) + 1)
+        }
+      }
       Set(tokens.map(_.hashCode % blockCounts.head).toSeq)
     }
   }
