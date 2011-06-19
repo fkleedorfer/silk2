@@ -102,6 +102,17 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
         myMetric.evaluate("Sirenia + Niobeth", "ould Sirenia and for Niobeth", 0.0) should equal(1.0)
     }
 
+    "TokenwiseStringSimilarity" should "return the same value as JaccardSimilarity with the right settings" in
+    {
+        val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="", nonStopwordWeight = 1.0, stopwordWeight=1.0, matchThreshold = 1.0)
+        val jaccardMetric = new JaccardSimilarity()
+        val tokenWiseScore = myMetric.evaluate("several seditious scribes", "several seditious scribes from caesarea", 0.0)
+        val jaccardScore = jaccardMetric.apply(Set("several", "seditious", "scribes"),Set("several", "seditious", "scribes", "from", "caesarea"), 0.0)
+        tokenWiseScore should equal(jaccardScore)
+
+    }
+
+
 
 ////// test for metric timing
 //    "TokenwiseStringSimilarity" should "return 1.0 in (The expansion of chains like Abercrombie and Gap to Europe is based on a major shift in how young Europeans think about American fashion. , The expansion of chains like Gap and Abercrombie to Europe is fueled by a major shift in how young Europeans think about American fashion. ) with special settings" in
