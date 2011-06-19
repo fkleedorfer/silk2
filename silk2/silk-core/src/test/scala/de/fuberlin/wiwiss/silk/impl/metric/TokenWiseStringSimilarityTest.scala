@@ -102,6 +102,12 @@ class TokenwiseStringSimilarityTest extends FlatSpec with ShouldMatchers
         myMetric.evaluate("Sirenia + Niobeth", "ould Sirenia and for Niobeth", 0.0) should equal(1.0)
     }
 
+    "TokenwiseStringSimilarity" should "return 1.0 in (Hotel California, California) with ONLY one stopword 'Hotel'" in
+    {
+        val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="Hotel", nonStopwordWeight = 1.0, stopwordWeight=0.0)
+        myMetric.evaluate("Hotel California", "California", 0.0) should equal(1.0)
+    }
+
     "TokenwiseStringSimilarity" should "return the same value as JaccardSimilarity with the right settings" in
     {
         val myMetric = new TokenwiseStringSimilarity(metricName = "levenshtein", stopwords="", nonStopwordWeight = 1.0, stopwordWeight=1.0, matchThreshold = 1.0)
