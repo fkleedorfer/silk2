@@ -224,9 +224,11 @@ case class TokenwiseStringSimilarity(
     if (debug) println("unionScoreForUnmatched=" + unionScoreForUnmatched)
     val unionScore = unionScoreForUnmatched + unionScoreForMatched
 
-    //note: the classic computation of the union score, following the scheme |A| + |B| - |A n B| would
-    //introduce an error of  2 * w(t1) * w(t2) - ( w(t1)^2 + w(t2)^2 ) [w(tx) being the weight of token x]
-    //i.e. the greater the difference between w(t1) and w(t2), the greater the error
+    //note: the classic computation of the union score, following the scheme |A| + |B| - |A intersect B|
+    //isn't applicable when tokens have individual weights. The error thus introduced for each token pair would be
+    //    sim(t1,t2) * (w(t1) - w(t2))^2
+    // [w(tx) being the weight of token x, and sim(x,y) the similarity score for tokens x and y]
+    //i.e. the greater the difference between w(t1) and w(t2), and the higher the similiarty, the greater the error
     //this would be the classic calculation:
     //val unionScore = weights1.map(math.pow(_,2)).sum + weights2.map(math.pow(_,2)).sum - intersectionScore;
 
