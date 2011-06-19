@@ -328,7 +328,10 @@ case class TokenwiseStringSimilarity(
           documentFrequencies.put(token, documentFrequencies.getOrElse(token,0) + 1)
         }
       }
-      Set(tokens.map(_.hashCode % blockCounts.head).toSeq)
+      //Set(tokens.map(_.hashCode % blockCounts.head).toSeq)
+      (for (token <- tokens.distinct) yield {
+        metric.index(token, threshold)
+      }).flatten.toSet
     }
   }
 
